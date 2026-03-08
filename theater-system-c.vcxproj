@@ -20,9 +20,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Common.h" />
+    <ClInclude Include="EntityKey_Persist.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Entitykey_Persist.c" />
     <ClCompile Include="test_common.c" />
+    <ClCompile Include="test_entitykey.c" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>

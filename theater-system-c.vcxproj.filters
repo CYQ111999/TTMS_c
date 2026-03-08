@@ -42,10 +42,19 @@
     <ClInclude Include="Common.h">
       <Filter>Header Files\Common</Filter>
     </ClInclude>
+    <ClInclude Include="EntityKey_Persist.h">
+      <Filter>Header Files\Persistence</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="test_common.c">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_entitykey.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Entitykey_Persist.c">
+      <Filter>Source Files\Persistence</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
