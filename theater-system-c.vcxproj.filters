@@ -45,16 +45,52 @@
     <ClInclude Include="EntityKey_Persist.h">
       <Filter>Header Files\Persistence</Filter>
     </ClInclude>
+    <ClInclude Include="Main_Menu.h">
+      <Filter>Header Files\View</Filter>
+    </ClInclude>
+    <ClInclude Include="Queries_Menu.h">
+      <Filter>Header Files\View</Filter>
+    </ClInclude>
+    <ClInclude Include="Play_UI.h">
+      <Filter>Header Files\View</Filter>
+    </ClInclude>
+    <ClInclude Include="Schedule_UI.h">
+      <Filter>Header Files\View</Filter>
+    </ClInclude>
+    <ClInclude Include="Ticket.h">
+      <Filter>Header Files\View</Filter>
+    </ClInclude>
+    <ClInclude Include="Studio_UI.h">
+      <Filter>Header Files\View</Filter>
+    </ClInclude>
+    <ClInclude Include="Sale_UI.h">
+      <Filter>Header Files\View</Filter>
+    </ClInclude>
+    <ClInclude Include="Account_UI.h">
+      <Filter>Header Files\View</Filter>
+    </ClInclude>
+    <ClInclude Include="MaiAccount_UI.h">
+      <Filter>Header Files\View</Filter>
+    </ClInclude>
+    <ClInclude Include="StaSales_UI.h">
+      <Filter>Header Files\View</Filter>
+    </ClInclude>
+    <ClInclude Include="Salesanalysis_UI.h">
+      <Filter>Header Files\View</Filter>
+    </ClInclude>
+    <ClInclude Include="Seat_UI.h">
+      <Filter>Header Files\View</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="test_common.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="test_entitykey.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Entitykey_Persist.c">
       <Filter>Source Files\Persistence</Filter>
+    </ClCompile>
+    <ClCompile Include="test_common.c">
+      <Filter>Source Files\tests</Filter>
+    </ClCompile>
+    <ClCompile Include="test_entitykey.c">
+      <Filter>Source Files\tests</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

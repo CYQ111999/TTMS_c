@@ -19,8 +19,20 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Account_UI.h" />
     <ClInclude Include="Common.h" />
     <ClInclude Include="EntityKey_Persist.h" />
+    <ClInclude Include="MaiAccount_UI.h" />
+    <ClInclude Include="Main_Menu.h" />
+    <ClInclude Include="Play_UI.h" />
+    <ClInclude Include="Queries_Menu.h" />
+    <ClInclude Include="Salesanalysis_UI.h" />
+    <ClInclude Include="Sale_UI.h" />
+    <ClInclude Include="Schedule_UI.h" />
+    <ClInclude Include="Seat_UI.h" />
+    <ClInclude Include="StaSales_UI.h" />
+    <ClInclude Include="Studio_UI.h" />
+    <ClInclude Include="Ticket.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Entitykey_Persist.c" />
