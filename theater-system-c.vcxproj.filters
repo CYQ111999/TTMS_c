@@ -146,5 +146,8 @@
     <ClCompile Include="EntKey.c">
       <Filter>Source Files\Service</Filter>
     </ClCompile>
+    <ClCompile Include="Utils.h">
+      <Filter>Header Files\Common</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
