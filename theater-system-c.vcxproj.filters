@@ -137,11 +137,14 @@
     <ClCompile Include="Entitykey_Persist.c">
       <Filter>Source Files\Persistence</Filter>
     </ClCompile>
-    <ClCompile Include="test_common.c">
-      <Filter>Source Files\tests</Filter>
+    <ClCompile Include="TTMS.c">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="test_entitykey.c">
-      <Filter>Source Files\tests</Filter>
+    <ClCompile Include="Main_Menu.c">
+      <Filter>Source Files\View</Filter>
+    </ClCompile>
+    <ClCompile Include="EntKey.c">
+      <Filter>Source Files\Service</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

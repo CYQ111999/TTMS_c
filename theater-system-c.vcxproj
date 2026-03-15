@@ -53,8 +53,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Entitykey_Persist.c" />
-    <ClCompile Include="test_common.c" />
-    <ClCompile Include="test_entitykey.c" />
+    <ClCompile Include="EntKey.c" />
+    <ClCompile Include="Main_Menu.c" />
+    <ClCompile Include="TTMS.c" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
