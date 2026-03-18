@@ -207,7 +207,7 @@ typedef struct salesanalysis_node {
 
 // 主键实体数据类型的定义
 typedef struct {
-    char name[41];  // 主键名称
+    char entyName[41];  // 主键名称
     long key;       // 主键键值
 } entity_key_t;
 

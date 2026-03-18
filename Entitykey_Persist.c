@@ -1,6 +1,8 @@
 ﻿//cyq写完成主键服务
 #include "EntityKey_Persist.h"
 #include "Common.h" 
+#include "List.h"
+#include "Utils.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
