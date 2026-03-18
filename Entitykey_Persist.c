@@ -39,7 +39,7 @@ long EntKey_Perst_GetNewKeys(const char entyName[], int count) {
     // 循环读取文件中的每条主键记录
     while (fread(&currentKey, sizeof(entity_key_t), 1, fp) == 1) {
         // 比较实体名是否匹配
-        if (strcmp(currentKey.entyName, entyName) == 0) {
+        if (strcmp(currentKey.name, entyName) == 0) {
             // 找到匹配记录，记录当前位置
             found = 1;
             filePosition = ftell(fp) - sizeof(entity_key_t);
@@ -64,8 +64,8 @@ long EntKey_Perst_GetNewKeys(const char entyName[], int count) {
         // 创建新的主键记录
         entity_key_t newKey;
         // 复制实体名，确保不超过40字符（entity_key_t定义的长度为41）
-        strncpy(newKey.entyName, entyName, 40);
-        newKey.entyName[40] = '\0';  // 确保字符串终止
+        strncpy(newKey.name, entyName, 40);
+        newKey.name[40] = '\0';  // 确保字符串终止
         // 设置主键值：分配count个，记录最大键值
         newKey.key = count;
         // 移动到文件末尾
