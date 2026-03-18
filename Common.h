@@ -23,12 +23,8 @@ typedef struct {
     int second;  // 秒
 } ttms_time_t;
 
-// ==================== 教材2.5节：通用链表节点结构 ====================
-// 必须内嵌在每个具体链表结点的开头
-typedef struct list_node {
-    struct list_node* prev;
-    struct list_node* next;
-} list_node_t;
+// 注意：教材2.5节不要求单独的list_node_t定义
+// 链表节点结构改为外嵌式，直接在各个链表节点中定义prev和next
 
 // 系统用户类型的定义
 typedef enum {
@@ -51,8 +47,9 @@ extern account_t gl_CurUser;
 
 // 系统用户链表节点的定义（修改为教材规范格式）
 typedef struct account_node {
-    list_node_t node;         // 必须放在开头，用于链表操作
     account_t data;           // 实体数据
+    struct account_node* prev;  // 前向指针
+    struct account_node* next;  // 后向指针
 } account_list_node_t, * account_list_t;
 
 // 演出厅实体数据类型的定义
@@ -66,8 +63,9 @@ typedef struct {
 
 // 演出厅链表结点及演出厅链表类型的定义（修改）
 typedef struct studio_node {
-    list_node_t node;  // 必须放在开头
-    studio_t data;     // 实体数据
+    studio_t data;           // 实体数据
+    struct studio_node* prev;  // 前向指针
+    struct studio_node* next;  // 后向指针
 } studio_list_node_t, * studio_list_t;
 
 // 座位状态类型的定义
@@ -88,8 +86,9 @@ typedef struct {
 
 // 座位链表结点的定义（修改）
 typedef struct seat_node {
-    list_node_t node;  // 必须放在开头
-    seat_t data;       // 实体数据
+    seat_t data;           // 实体数据
+    struct seat_node* prev;  // 前向指针
+    struct seat_node* next;  // 后向指针
 } seat_list_node_t, * seat_list_t;
 
 // 剧目类型的定义
@@ -121,8 +120,9 @@ typedef struct {
 
 // 剧目链表节点的定义（修改）
 typedef struct play_node {
-    list_node_t node;  // 必须放在开头
-    play_t data;       // 实体数据
+    play_t data;           // 实体数据
+    struct play_node* prev;  // 前向指针
+    struct play_node* next;  // 后向指针
 } play_list_node_t, * play_list_t;
 
 // 演出计划数据类型的定义
@@ -137,8 +137,9 @@ typedef struct {
 
 // 演出计划链表节点的定义（修改）
 typedef struct schedule_node {
-    list_node_t node;  // 必须放在开头
-    schedule_t data;   // 实体数据
+    schedule_t data;           // 实体数据
+    struct schedule_node* prev;  // 前向指针
+    struct schedule_node* next;  // 后向指针
 } schedule_list_node_t, * schedule_list_t;
 
 // 票类型的定义
@@ -159,8 +160,9 @@ typedef struct {
 
 // 票链表节点的定义（修改）
 typedef struct ticket_node {
-    list_node_t node;  // 必须放在开头
-    ticket_t data;     // 实体数据
+    ticket_t data;           // 实体数据
+    struct ticket_node* prev;  // 前向指针
+    struct ticket_node* next;  // 后向指针
 } ticket_list_node_t, * ticket_list_t;
 
 // 订单类型的定义
@@ -182,8 +184,9 @@ typedef struct {
 
 // 订单信息链表节点的定义（修改）
 typedef struct sale_node {
-    list_node_t node;  // 必须放在开头
-    sale_t data;       // 实体数据
+    sale_t data;           // 实体数据
+    struct sale_node* prev;  // 前向指针
+    struct sale_node* next;  // 后向指针
 } sale_list_node_t, * sale_list_t;
 
 // 统计票房实体数据类型的定义
@@ -201,20 +204,22 @@ typedef struct {
 
 // 统计票房链表节点的定义（修改）
 typedef struct salesanalysis_node {
-    list_node_t node;       // 必须放在开头
-    salesanalysis_t data;   // 实体数据
+    salesanalysis_t data;           // 实体数据
+    struct salesanalysis_node* prev;  // 前向指针
+    struct salesanalysis_node* next;  // 后向指针
 } sales_analysis_list_node_t, * sales_analysis_list_t;
 
-// 主键实体数据类型的定义
+// 主键实体数据类型的定义（注意：按照教材例2.11，字段名应为name，不是entyName）
 typedef struct {
-    char entyName[41];  // 主键名称
+    char name[41];  // 主键名称（教材例2.11使用name）
     long key;       // 主键键值
 } entity_key_t;
 
 // 主键链表结点的定义（修改）
 typedef struct entity_key_node {
-    list_node_t node;   // 必须放在开头
-    entity_key_t data;  // 实体数据
+    entity_key_t data;           // 实体数据
+    struct entity_key_node* prev;  // 前向指针
+    struct entity_key_node* next;  // 后向指针
 } entkey_list_node_t, * entkey_list_t;
 
 #endif /* COMMON_H */
