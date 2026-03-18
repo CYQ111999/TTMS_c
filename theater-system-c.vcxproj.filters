@@ -143,9 +143,6 @@
     <ClCompile Include="Utils.h">
       <Filter>Header Files\Common</Filter>
     </ClCompile>
-    <ClCompile Include="account.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Account_Srv.c">
       <Filter>Source Files\Service</Filter>
     </ClCompile>

@@ -54,7 +54,6 @@
     <ClInclude Include="Ticket_Persist.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="account.c" />
     <ClCompile Include="Account_Srv.c" />
     <ClCompile Include="Account_UI.c" />
     <ClCompile Include="Utils.h" />
