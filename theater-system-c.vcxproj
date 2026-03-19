@@ -21,8 +21,6 @@
   <ItemGroup>
     <ClInclude Include="Account.h" />
     <ClInclude Include="Account_Persist.h" />
-    <ClInclude Include="Account_Srv.h" />
-    <ClInclude Include="Account_UI.h" />
     <ClInclude Include="Common.h" />
     <ClInclude Include="EntityKey.h" />
     <ClInclude Include="EntityKey_Persist.h" />
@@ -54,11 +52,27 @@
     <ClInclude Include="Ticket_Persist.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="account.c" />
     <ClCompile Include="Account_Srv.c" />
     <ClCompile Include="Account_UI.c" />
     <ClCompile Include="Entitykey_Persist.c" />
     <ClCompile Include="EntKey.c" />
+    <ClCompile Include="FileName.c" />
+    <ClCompile Include="Play.c" />
+    <ClCompile Include="Play_Persist.c" />
+    <ClCompile Include="Play_UI.c" />
+    <ClCompile Include="Sale.c" />
+    <ClCompile Include="Salesanalysis_Srv.c" />
+    <ClCompile Include="Salesanalysis_UI.c" />
+    <ClCompile Include="Sale_Persist.c" />
+    <ClCompile Include="Sale_UI.c" />
+    <ClCompile Include="Schedule.c" />
+    <ClCompile Include="Schedule_Persist.c" />
+    <ClCompile Include="Seat.c" />
+    <ClCompile Include="Seat_Persist.c" />
+    <ClCompile Include="Seat_UI.c" />
+    <ClCompile Include="ticket.c" />
+    <ClCompile Include="tickets.c" />
+    <ClCompile Include="Ticket_Persist.c" />
     <ClCompile Include="Utils.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
