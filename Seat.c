@@ -5,7 +5,7 @@
 #include "Seat_Persist.h"
 #include "EntityKey_Persist.h"
 #include "List.h"
-
+#define _CRT_SECURE_NO_WARNINGS
 // 初始化演出厅所有座位
 int Seat_Srv_RoomInit(seat_list_t list, int roomID, int rowsCount, int colsCount) {
     seat_list_node_t* node;

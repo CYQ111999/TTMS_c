@@ -69,9 +69,6 @@
     <ClInclude Include="MaiAccount_UI.h">
       <Filter>Header Files\View</Filter>
     </ClInclude>
-    <ClInclude Include="StaSales_UI.h">
-      <Filter>Header Files\View</Filter>
-    </ClInclude>
     <ClInclude Include="Salesanalysis_UI.h">
       <Filter>Header Files\View</Filter>
     </ClInclude>
@@ -132,13 +129,16 @@
     <ClInclude Include="List.h">
       <Filter>Header Files\Common</Filter>
     </ClInclude>
+    <ClInclude Include="MainAccount_UI.c">
+      <Filter>Source Files\View</Filter>
+    </ClInclude>
+    <ClInclude Include="Account_UI.h">
+      <Filter>Header Files\View</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Utils.h">
       <Filter>Header Files\Common</Filter>
-    </ClCompile>
-    <ClCompile Include="Account_Srv.c">
-      <Filter>Source Files\Service</Filter>
     </ClCompile>
     <ClCompile Include="Account_UI.c">
       <Filter>Source Files\View</Filter>
@@ -149,56 +149,77 @@
     <ClCompile Include="EntKey.c">
       <Filter>Source Files\Service</Filter>
     </ClCompile>
-    <ClCompile Include="FileName.c">
+    <ClCompile Include="TTMS.c">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Schedule_UI.c">
+      <Filter>Source Files\View</Filter>
+    </ClCompile>
+    <ClCompile Include="Account.c">
+      <Filter>Source Files\Service</Filter>
+    </ClCompile>
+    <ClCompile Include="Main_Menu.c">
+      <Filter>Source Files\View</Filter>
     </ClCompile>
     <ClCompile Include="Play.c">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Service</Filter>
     </ClCompile>
     <ClCompile Include="Play_Persist.c">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Persistence</Filter>
     </ClCompile>
     <ClCompile Include="Play_UI.c">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\View</Filter>
+    </ClCompile>
+    <ClCompile Include="Queries_Menu.c">
+      <Filter>Source Files\View</Filter>
     </ClCompile>
     <ClCompile Include="Sale.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Salesanalysis_Srv.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Salesanalysis_UI.c">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Service</Filter>
     </ClCompile>
     <ClCompile Include="Sale_Persist.c">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Persistence</Filter>
     </ClCompile>
     <ClCompile Include="Sale_UI.c">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\View</Filter>
+    </ClCompile>
+    <ClCompile Include="Salesanalysis_Srv.c">
+      <Filter>Source Files\Service</Filter>
+    </ClCompile>
+    <ClCompile Include="Salesanalysis_UI.c">
+      <Filter>Source Files\View</Filter>
     </ClCompile>
     <ClCompile Include="Schedule.c">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Service</Filter>
     </ClCompile>
     <ClCompile Include="Schedule_Persist.c">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Persistence</Filter>
     </ClCompile>
     <ClCompile Include="Seat.c">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Service</Filter>
     </ClCompile>
     <ClCompile Include="Seat_Persist.c">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Persistence</Filter>
     </ClCompile>
     <ClCompile Include="Seat_UI.c">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\View</Filter>
+    </ClCompile>
+    <ClCompile Include="Studio.c">
+      <Filter>Source Files\Service</Filter>
+    </ClCompile>
+    <ClCompile Include="Studio_Persist.c">
+      <Filter>Source Files\Persistence</Filter>
+    </ClCompile>
+    <ClCompile Include="Studio_UI.c">
+      <Filter>Source Files\View</Filter>
     </ClCompile>
     <ClCompile Include="ticket.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="tickets.c">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Service</Filter>
     </ClCompile>
     <ClCompile Include="Ticket_Persist.c">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Persistence</Filter>
+    </ClCompile>
+    <ClCompile Include="tickets.c">
+      <Filter>Source Files\Persistence</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

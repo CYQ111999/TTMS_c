@@ -1,8 +1,15 @@
-﻿#pragma once
+﻿// Main_Menu.h
 #ifndef MAIN_MENU_H
 #define MAIN_MENU_H
 
-//函数声明
-int Main_Menu(void);
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#endif /* MAIN_MENU_H */
+	int Main_Menu(void);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif

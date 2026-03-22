@@ -19,6 +19,6 @@ int Play_Srv_DeleteByID(int id);
 // 根据ID获取剧目
 int Play_Srv_FetchByID(int id, play_t* buf);
 
-
+int Play_Srv_GetCount(play_list_t list);
 
 #endif

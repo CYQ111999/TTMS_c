@@ -1,4 +1,5 @@
 ﻿//cyq写完成主键服务
+#define _CRT_SECURE_NO_WARNINGS
 #include "EntityKey_Persist.h"
 #include "Common.h" 
 #include "List.h"

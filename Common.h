@@ -8,6 +8,9 @@
 #pragma once
 #ifndef COMMON_H
 #define COMMON_H
+#ifndef SALESANALYSIS_PAGE_SIZE
+#define SALESANALYSIS_PAGE_SIZE 5
+#endif
 
 #include "List.h"
 
@@ -49,7 +52,7 @@ extern account_t gl_CurUser;
 typedef struct account_node {
     list_node_t node;         // 必须放在开头，用于链表操作
     account_t data;           // 实体数据
-} account_list_node_t, * account_list_t;
+} account_list_node_t, * account_list_t, account_node_t;  // 增加别名
 
 // 演出厅实体数据类型的定义
 typedef struct {

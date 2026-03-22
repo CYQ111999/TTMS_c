@@ -1,53 +1,144 @@
-﻿#include "Ticket.h"
-#include "Ticket_Persist.h"
-#include "Seat.h"
+﻿// Ticket.c
+#include "Ticket.h"
 #include "Schedule.h"
+#include "Play.h"
 #include "Common.h"
-#include <stdlib.h>
+#include "List.h"
+#include <stdio.h>
+#include <ctype.h>
+#define _CRT_SECURE_NO_WARNINGS
+int Ticket_UI_ShowTicket(int ticket_id) {
+    ticket_t ticket;
+    int rtn = 0;
 
-// 批量生成演出票
-int Ticket_Srv_GenBatch(int schedule_id, int stuID) {
-    seat_list_t seat_head = NULL;
-    schedule_t sch;
-
-    if (!Schedule_Srv_FetchByID(schedule_id, &sch))
-        return -1;
-
-    int count = Seat_Srv_FetchValidByRoomID(sch.studio_id, &seat_head);
-    if (count <= 0) return 0;
-
-    int result = Ticket_Perst_Insert(schedule_id, seat_head);
-    SeatList_Destroy(seat_head);
-    return result >= 0 ? count : -1;
-}
-
-// 根据演出计划ID批量删除票
-int Ticket_Srv_DeleteBatch(int schedule_id) {
-    return Ticket_Perst_Rem(schedule_id);
-}
-
-// 根据演出计划ID获取所有票数据（载入到链表）
-int Ticket_Srv_FetchBySchID(int id, ticket_list_t* list) {
-    return Ticket_Perst_SelBySchID(id, list);
-}
-
-// 根据座位ID在链表中查找票结点
-ticket_list_t Ticket_Srv_FetchBySeatID(ticket_list_t list, int seat_id) {
-    ticket_list_t p = list;
-    while (p) {
-        if (p->data.seat_id == seat_id)
-            return p;
-        p = (ticket_list_t)(p->node.next);
+    if (Ticket_Srv_FetchByID(ticket_id, &ticket) == 1) {  // 统一使用 Ticket_Srv_FetchByID
+        printf("票ID: %d\n", ticket.id);
+        printf("演出计划ID: %d\n", ticket.schedule_id);
+        printf("座位ID: %d\n", ticket.seat_id);
+        printf("票价: %d元\n", ticket.price);
+        printf("状态: %s\n",
+            ticket.status == 0 ? "待售" :
+            ticket.status == 1 ? "已售" : "已退");
+        rtn = 1;
     }
-    return NULL;
+    else {
+        printf("未找到ID为 %d 的演出票\n", ticket_id);
+    }
+    return rtn;
 }
 
-// 修改票状态
-int Ticket_Srv_Modify(const ticket_t* data) {
-    return Ticket_Perst_Update(data);
+void Ticket_UI_Query(void) {
+    ticket_list_t head = NULL;  // 使用链表指针
+
+    List_Init(head, ticket_list_node_t);
+
+    int count = Ticket_Srv_FetchAll(&head);
+    if (count < 0) {
+        printf("查询演出票失败！\n");
+        return;
+    }
+
+    if (count == 0) {
+        printf("暂无演出票信息。\n");
+    }
+    else {
+        printf("共找到 %d 张演出票：\n", count);
+        printf("==============================\n");
+
+        ticket_list_node_t* cur = (ticket_list_node_t*)((list_node_t*)head)->next;
+        int i = 0;
+        while (cur != (ticket_list_node_t*)head) {
+            printf("%d. ", ++i);
+            Ticket_UI_ShowTicket(cur->data.id);
+            printf("---\n");
+            cur = (ticket_list_node_t*)cur->node.next;
+        }
+    }
+
+    // 释放链表
+    if (head != NULL) {
+        List_Destroy(head, ticket_list_node_t);
+    }
 }
 
-// 根据票ID获取票信息（单个）
-int Ticket_Srv_FetchByID(int id, ticket_t* buf) {
-    return Ticket_Perst_SelectByID(id, buf);
+void Ticket_UI_MgtEntry(int schedule_id) {
+    schedule_t sch;
+    play_t play;
+
+    system("cls");
+    printf("\n=================== 票务管理 ===================\n");
+
+    if (Schedule_Srv_FetchByID(schedule_id, &sch) != 1) {
+        printf("获取演出计划失败！\n");
+        printf("按任意键返回...");
+        getchar();
+        return;
+    }
+
+    if (Play_Srv_FetchByID(sch.play_id, &play) != 1) {
+        printf("获取剧目信息失败！\n");
+        printf("按任意键返回...");
+        getchar();
+        return;
+    }
+
+    printf("剧目名称: %s\n", play.name);
+    printf("演出厅编号: %d\n", sch.studio_id);
+    printf("演出日期: %04d-%02d-%02d\n",
+        sch.date.year, sch.date.month, sch.date.day);
+    printf("演出时间: %02d:%02d:%02d\n",
+        sch.time.hour, sch.time.minute, sch.time.second);
+
+    printf("\n请选择操作：\n");
+    printf("1. 生成演出票\n");
+    printf("2. 重新生成票（删除后重新生成）\n");
+    printf("0. 返回上级菜单\n");
+    printf("==============================================\n");
+    printf("请选择操作: ");
+
+    int choice;
+    if (scanf("%d", &choice) != 1) {
+        printf("输入错误！\n");
+        getchar();
+        getchar();
+        return;
+    }
+    getchar();
+
+    switch (choice) {
+    case 1:
+        if (Ticket_Srv_GenBatch(schedule_id, sch.studio_id) > 0) {
+            printf("演出票生成完成。\n");
+        }
+        else {
+            printf("演出票生成失败！\n");
+        }
+        break;
+    case 2:
+        printf("确定要删除并重新生成票吗？(y/n): ");
+        char confirm = tolower(getchar());
+        getchar();
+        if (confirm == 'y') {
+            Ticket_Srv_DeleteBatch(schedule_id);
+            if (Ticket_Srv_GenBatch(schedule_id, sch.studio_id) > 0) {
+                printf("演出票重新生成完成。\n");
+            }
+            else {
+                printf("演出票重新生成失败！\n");
+            }
+        }
+        else {
+            printf("已取消操作。\n");
+        }
+        break;
+    case 0:
+        printf("返回上级菜单...\n");
+        break;
+    default:
+        printf("无效选择！\n");
+        break;
+    }
+
+    printf("按任意键继续...");
+    getchar();
 }

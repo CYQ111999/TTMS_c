@@ -21,11 +21,13 @@
   <ItemGroup>
     <ClInclude Include="Account.h" />
     <ClInclude Include="Account_Persist.h" />
+    <ClInclude Include="Account_UI.h" />
     <ClInclude Include="Common.h" />
     <ClInclude Include="EntityKey.h" />
     <ClInclude Include="EntityKey_Persist.h" />
     <ClInclude Include="List.h" />
     <ClInclude Include="MaiAccount_UI.h" />
+    <ClInclude Include="MainAccount_UI.c" />
     <ClInclude Include="Main_Menu.h" />
     <ClInclude Include="Play.h" />
     <ClInclude Include="Play_Persist.h" />
@@ -43,7 +45,6 @@
     <ClInclude Include="Seat_Persist.h" />
     <ClInclude Include="Seat_UI.h" />
     <ClInclude Include="StaSales.h" />
-    <ClInclude Include="StaSales_UI.h" />
     <ClInclude Include="Studio.h" />
     <ClInclude Include="Studio_Persist.h" />
     <ClInclude Include="Studio_UI.h" />
@@ -52,14 +53,15 @@
     <ClInclude Include="Ticket_Persist.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Account_Srv.c" />
+    <ClCompile Include="Account.c" />
     <ClCompile Include="Account_UI.c" />
     <ClCompile Include="Entitykey_Persist.c" />
     <ClCompile Include="EntKey.c" />
-    <ClCompile Include="FileName.c" />
+    <ClCompile Include="Main_Menu.c" />
     <ClCompile Include="Play.c" />
     <ClCompile Include="Play_Persist.c" />
     <ClCompile Include="Play_UI.c" />
+    <ClCompile Include="Queries_Menu.c" />
     <ClCompile Include="Sale.c" />
     <ClCompile Include="Salesanalysis_Srv.c" />
     <ClCompile Include="Salesanalysis_UI.c" />
@@ -67,12 +69,17 @@
     <ClCompile Include="Sale_UI.c" />
     <ClCompile Include="Schedule.c" />
     <ClCompile Include="Schedule_Persist.c" />
+    <ClCompile Include="Schedule_UI.c" />
     <ClCompile Include="Seat.c" />
     <ClCompile Include="Seat_Persist.c" />
     <ClCompile Include="Seat_UI.c" />
+    <ClCompile Include="Studio.c" />
+    <ClCompile Include="Studio_Persist.c" />
+    <ClCompile Include="Studio_UI.c" />
     <ClCompile Include="ticket.c" />
     <ClCompile Include="tickets.c" />
     <ClCompile Include="Ticket_Persist.c" />
+    <ClCompile Include="TTMS.c" />
     <ClCompile Include="Utils.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

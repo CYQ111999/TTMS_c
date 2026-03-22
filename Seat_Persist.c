@@ -4,6 +4,7 @@
 #include "Seat.h"
 #include "EntityKey_Persist.h"
 #include "List.h"
+#define _CRT_SECURE_NO_WARNINGS
 
 #define SEAT_DATA_FILE "Seat.dat"
 #define SEAT_DATA_TEMP_FILE "SeatTmp.dat"

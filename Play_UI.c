@@ -5,6 +5,7 @@
 #include "Play_Persist.h"
 #include "List.h"
 #include "Common.h"
+#define _CRT_SECURE_NO_WARNINGS
 
 static play_list_t gl_playList = NULL;
 

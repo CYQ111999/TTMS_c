@@ -1,1190 +1,981 @@
-﻿#include "Account_Srv.h"
+﻿#include "Account.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 #include <conio.h>
+#define _CRT_SECURE_NO_WARNINGS
 
+// 修改这里：只声明，不定义全局变量
+extern account_t gl_CurUser;  // 在 Service/Account.c 中定义
+extern account_list_t account_list;  // 在 Service/Account.c 中定义
 
-// ��������
+// 清屏函数
 #ifdef _WIN32
 #define clear_screen() system("cls")
 #else
 #define clear_screen() system("clear")
 #endif
 
-// �ȴ��û�����
+// 等待用户按键
 void press_any_key() {
-	printf("\n�����������...");
-	getchar();
+    printf("\n按任意键继续...");
+    _getch();
 }
 
-// ��ʾ��ǰҳ���û���Ϣ
+// 获取用户类型字符串
+static const char* getAccountTypeString(account_type_t type) {
+    switch (type) {
+    case USR_CLERK: return "销售员";
+    case USR_MANG:  return "经理";
+    case USR_ADMIN: return "管理员";
+    case USR_ANOMY: return "匿名用户";
+    default:        return "未知";
+    }
+}
+
+// 账户管理主菜单入口函数
+void Account_UI_MgtEntry(void) {
+    int choice = 0;
+
+    do {
+        clear_screen();
+        printf("\n=================== 账户管理系统 ===================\n");
+        printf("当前用户: %s (", gl_CurUser.username);
+
+        switch (gl_CurUser.type) {
+        case USR_CLERK: printf("销售员"); break;
+        case USR_MANG:  printf("经理"); break;
+        case USR_ADMIN: printf("管理员"); break;
+        case USR_ANOMY: printf("匿名用户"); break;
+        default:        printf("未知"); break;
+        }
+        printf(")\n");
+        printf("===============================================\n");
+        printf("1. 浏览所有账户\n");
+        printf("2. 添加账户\n");
+        printf("3. 修改账户\n");
+        printf("4. 删除账户\n");
+        printf("5. 查找账户\n");
+        printf("0. 返回上级菜单\n");
+        printf("===============================================\n");
+        printf("请选择功能: ");
+
+        if (scanf("%d", &choice) != 1) {
+            printf("输入错误！\n");
+            getchar(); getchar();
+            continue;
+        }
+        getchar();
+
+        switch (choice) {
+        case 1:
+            Account_UI_FetchAll();
+            break;
+        case 2:
+            Account_UI_Add(NULL);
+            break;
+        case 3:
+            Account_UI_Modify(NULL);
+            break;
+        case 4:
+            Account_UI_Delete(NULL);
+            break;
+        case 5:
+            Account_UI_Search(NULL);
+            break;
+        case 0:
+            printf("返回上级菜单...\n");
+            break;
+        default:
+            printf("无效选择！\n");
+            _getch();
+            break;
+        }
+    } while (choice != 0);
+}
+
+// 显示当前页的用户信息
 void display_current_page(paging_t* pg) {
-	if (!account_list || pg->totalRecords == 0) {
-		printf("\n��ǰû���û����ݣ�\n");
-		return;
-	}
+    if (!account_list || pg->totalRecords == 0) {
+        printf("\n当前没有用户数据！\n");
+        return;
+    }
 
-	printf("\n�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T\n");
-	printf("                      �û��б�\n");
-	printf("�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T\n");
+    printf("\n═══════════════════════════════════════════════════════\n");
+    printf("                      用户列表\n");
+    printf("═══════════════════════════════════════════════════════\n");
 
-	int i = 0;
-	account_list_t pos = NULL;
+    int i = 0;
+    account_list_t pos = NULL;
 
-	printf("���  ID   �û���       ����       �û�����\n");
-	printf("----  ----  ----------  ----------  --------------\n");
+    printf("序号  ID   用户名       密码       用户类型\n");
+    printf("----  ----  ----------  ----------  --------------\n");
 
-	Paging_ViewPage_ForEach(account_list, *pg, account_list_node_t, pos, i) {
-		if (pos) {
-			char* type_str = "δ֪";
-			switch (pos->data.type) {
-			case USR_ANOMY: type_str = "�����û�"; break;
-			case USR_CLERK: type_str = "����Ա"; break;
-			case USR_MANG:  type_str = "����"; break;
-			case USR_ADMIN: type_str = "����Ա"; break;
-			}
+    // 修改这里：使用正确的分页遍历宏
+    Paging_ViewPage_ForEach(account_list, *pg, account_node_t, pos, i) {
+        if (pos) {
+            const char* type_str = getAccountTypeString(pos->data.type);
 
-			printf("%-4d  %-4d  %-10s  %-10s  %s\n",
-				i + 1,
-				pos->data.id,
-				pos->data.username,
-				pos->data.password,
-				type_str);
-		}
-	}
+            printf("%-4d  %-4d  %-10s  %-10s  %s\n",
+                i + 1,
+                pos->data.id,
+                pos->data.username,
+                pos->data.password,
+                type_str);
+        }
+    }
 
-	printf("�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T\n");
+    printf("═══════════════════════════════════════════════════════\n");
 }
 
-// ��ʾ��ҳ��Ϣ
+// 显示分页信息
 void display_page_info(paging_t* pg) {
-	int current_page = Pageing_CurPage(*pg);
-	int total_pages = Pageing_TotalPages(*pg);
+    int current_page = Pageing_CurPage(*pg);
+    int total_pages = Pageing_TotalPages(*pg);
 
-	printf("��ǰ�� %d/%d ҳ | �ܼ�¼��: %d | ÿҳ��ʾ: %d ��\n",
-		current_page, total_pages, pg->totalRecords, pg->pageSize);
+    printf("当前第 %d/%d 页 | 总记录数: %d | 每页显示: %d 条\n",
+        current_page, total_pages, pg->totalRecords, pg->pageSize);
 }
 
-// ���¼����ܼ�¼���ĸ�������
+// 重新计算总记录数的辅助函数
 void recalc_total_records(paging_t* pg) {
-	if (!account_list) {
-		pg->totalRecords = 0;
-		return;
-	}
+    if (!account_list) {
+        pg->totalRecords = 0;
+        return;
+    }
 
-	int count = 0;
-	account_list_t cur = NULL;
-	List_ForEach(account_list, cur) {
-		count++;
-	}
-	pg->totalRecords = count;
+    int count = 0;
+    account_list_t cur = NULL;
+    List_ForEach(account_list, cur) {
+        count++;
+    }
+    pg->totalRecords = count;
 }
 
-// �����û�����
-void Account_UI_Add(paging_t* pg) {
-	clear_screen();
-	printf("�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T\n");
-	printf("                      �����û�\n");
-	printf("�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T\n");
+// 新增用户功能
+void Account_UI_Add(void* pg_ptr) {
+    paging_t* pg = (paging_t*)pg_ptr;
+    clear_screen();
+    printf("═══════════════════════════════════════════════════════\n");
+    printf("                      新增用户\n");
+    printf("═══════════════════════════════════════════════════════\n");
 
-	// ��ȡ��һ�����õ�ID
-	int next_id = getNextId();
-	printf("���û�ID���Զ�����Ϊ: %d\n", next_id);
-	printf("�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T\n");
+    // 获取下一个可用的ID
+    int next_id = Account_Srv_GetNextId();
+    printf("新用户ID将自动分配为: %d\n", next_id);
+    printf("═══════════════════════════════════════════════════════\n");
 
-	account_t new_user;
-	new_user.id = next_id;
+    account_t new_user;
+    memset(&new_user, 0, sizeof(account_t));
+    new_user.id = next_id;
 
-	// �����û���
-	int valid_username = 0;
-	while (!valid_username) {
-		printf("�������û��� (3-20���ַ�, ���ܰ����ո�): ");
-		fgets(new_user.username, 30, stdin);
-		new_user.username[strcspn(new_user.username, "\n")] = '\0';  // �Ƴ����з�
+    // 输入用户名
+    int valid_username = 0;
+    while (!valid_username) {
+        printf("请输入用户名 (3-20个字符, 不能包含空格): ");
+        fgets(new_user.username, 30, stdin);
+        new_user.username[strcspn(new_user.username, "\n")] = '\0';  // 移除换行符
 
-		// ��֤�û���
-		if (strlen(new_user.username) < 3) {
-			printf("�����û���̫�̣�������Ҫ3���ַ���\n");
-		}
-		else if (strlen(new_user.username) > 20) {
-			printf("�����û���̫�������20���ַ���\n");
-		}
-		else if (strchr(new_user.username, ' ') != NULL) {
-			printf("�����û������ܰ����ո�\n");
-		}
-		else {
-			valid_username = 1;
-		}
-	}
+        // 验证用户名
+        if (strlen(new_user.username) < 3) {
+            printf("错误：用户名太短，至少需要3个字符！\n");
+        }
+        else if (strlen(new_user.username) > 20) {
+            printf("错误：用户名太长，最多20个字符！\n");
+        }
+        else if (strchr(new_user.username, ' ') != NULL) {
+            printf("错误：用户名不能包含空格！\n");
+        }
+        else {
+            valid_username = 1;
+        }
+    }
 
-	// ��������
-	int valid_password = 0;
-	while (!valid_password) {
-		printf("���������� (6-20���ַ�): ");
-		fgets(new_user.password, 30, stdin);
-		new_user.password[strcspn(new_user.password, "\n")] = '\0';  // �Ƴ����з�
+    // 输入密码
+    int valid_password = 0;
+    while (!valid_password) {
+        printf("请输入密码 (6-20个字符): ");
+        fgets(new_user.password, 30, stdin);
+        new_user.password[strcspn(new_user.password, "\n")] = '\0';  // 移除换行符
 
-		if (strlen(new_user.password) < 6) {
-			printf("��������̫�̣�������Ҫ6���ַ���\n");
-		}
-		else if (strlen(new_user.password) > 20) {
-			printf("��������̫�������20���ַ���\n");
-		}
-		else {
-			valid_password = 1;
-		}
-	}
+        if (strlen(new_user.password) < 6) {
+            printf("错误：密码太短，至少需要6个字符！\n");
+        }
+        else if (strlen(new_user.password) > 20) {
+            printf("错误：密码太长，最多20个字符！\n");
+        }
+        else {
+            valid_password = 1;
+        }
+    }
 
-	// �����û�����
-	int valid_type = 0;
-	while (!valid_type) {
-		printf("\n��ѡ���û����ͣ�\n");
-		printf("  1. ����Ա (USR_CLERK)\n");
-		printf("  2. ���� (USR_MANG)\n");
-		printf("  3. ����Ա (USR_ADMIN)\n");
-		printf("  4. �����û� (USR_ANOMY)\n");
-		printf("���������ͱ�� (1-4): ");
+    // 输入用户类型
+    int valid_type = 0;
+    while (!valid_type) {
+        printf("\n请选择用户类型：\n");
+        printf("  1. 销售员 (USR_CLERK)\n");
+        printf("  2. 经理 (USR_MANG)\n");
+        printf("  3. 管理员 (USR_ADMIN)\n");
+        printf("  4. 匿名用户 (USR_ANOMY)\n");
+        printf("请输入类型编号 (1-4): ");
 
-		int type_choice;
-		if (scanf("%d", &type_choice) != 1) {
-			printf("������������Ч�����֣�\n");
-			while (getchar() != '\n');  // ������뻺����
-			continue;
-		}
-		getchar();  // ��ջ��з�
+        int type_choice;
+        if (scanf("%d", &type_choice) != 1) {
+            printf("错误：请输入有效的数字！\n");
+            while (getchar() != '\n');  // 清空输入缓冲区
+            continue;
+        }
+        getchar();  // 清空换行符
 
-		switch (type_choice) {
-		case 1:
-			new_user.type = USR_CLERK;
-			valid_type = 1;
-			break;
-		case 2:
-			new_user.type = USR_MANG;
-			valid_type = 1;
-			break;
-		case 3:
-			new_user.type = USR_ADMIN;
-			valid_type = 1;
-			break;
-		case 4:
-			new_user.type = USR_ANOMY;
-			valid_type = 1;
-			break;
-		default:
-			printf("������Ч�����ͱ�ţ�������ѡ��\n");
-			break;
-		}
-	}
+        switch (type_choice) {
+        case 1:
+            new_user.type = USR_CLERK;
+            valid_type = 1;
+            break;
+        case 2:
+            new_user.type = USR_MANG;
+            valid_type = 1;
+            break;
+        case 3:
+            new_user.type = USR_ADMIN;
+            valid_type = 1;
+            break;
+        case 4:
+            new_user.type = USR_ANOMY;
+            valid_type = 1;
+            break;
+        default:
+            printf("错误：无效的类型编号，请重新选择！\n");
+            break;
+        }
+    }
 
-	// ȷ����Ϣ
-	printf("\n�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T\n");
-	printf("��ȷ���û���Ϣ��\n");
-	printf("  ID: %d\n", new_user.id);
-	printf("  �û���: %s\n", new_user.username);
-	printf("  ����: %s\n", new_user.password);
-	printf("  �û�����: %d", new_user.type);
+    // 确认信息
+    printf("\n═══════════════════════════════════════════════════════\n");
+    printf("请确认用户信息：\n");
+    printf("  ID: %d\n", new_user.id);
+    printf("  用户名: %s\n", new_user.username);
+    printf("  密码: %s\n", new_user.password);
+    printf("  用户类型: ");
 
-	switch (new_user.type) {
-	case USR_ANOMY: printf(" (�����û�)\n"); break;
-	case USR_CLERK: printf(" (����Ա)\n"); break;
-	case USR_MANG:  printf(" (����)\n"); break;
-	case USR_ADMIN: printf(" (����Ա)\n"); break;
-	}
+    switch (new_user.type) {
+    case USR_ANOMY: printf("匿名用户\n"); break;
+    case USR_CLERK: printf("销售员\n"); break;
+    case USR_MANG:  printf("经理\n"); break;
+    case USR_ADMIN: printf("管理员\n"); break;
+    default:        printf("未知\n"); break;
+    }
 
-	printf("�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T\n");
-	printf("ȷ����Ӵ��û���(y/n): ");
+    printf("═══════════════════════════════════════════════════════\n");
+    printf("确认添加此用户吗？(y/n): ");
 
-	char confirm;
-	scanf("%c", &confirm);
-	getchar();  // ��ջ��з�
+    char confirm;
+    scanf("%c", &confirm);
+    getchar();  // 清空换行符
 
-	if (confirm == 'y' || confirm == 'Y') {
-		// �������ݲ㺯������û�
-		int result = Account_Srv_Add(&new_user);
+    if (confirm == 'y' || confirm == 'Y') {
+        // 调用数据层函数添加用户
+        int result = Account_Srv_Add(&new_user);
 
-		if (result) {
-			printf("\n�û���ӳɹ���\n");
+        if (result) {
+            printf("\n用户添加成功！\n");
 
-			// ֱ�Ӹ��·�ҳ�����ܼ�¼������Ϊ�����Ѿ������ˣ�
-			pg->totalRecords++;
+            // 重新加载数据
+            Account_Srv_LoadAll();
 
-			// �������û����ڵ�ҳ��
-			int total_pages = Pageing_TotalPages(*pg);
+            // 重新计算总记录数
+            if (pg != NULL) {
+                recalc_total_records(pg);
 
-			// ��λ�����һҳ
-			Paging_Locate_LastPage(account_list, *pg, account_list_node_t);
+                // 定位到最后一页
+                Paging_Locate_LastPage(account_list, *pg, account_node_t);
 
-			printf("���Զ���ת�����һҳ�鿴���������\n");
-			printf("���û�λ�ڵ� %d/%d ҳ\n", total_pages, total_pages);
-		}
-		else {
-			printf("\n�û����ʧ�ܣ��������û����Ѵ��ڻ���������\n");
-		}
-	}
-	else {
-		printf("\n��ȡ������û���\n");
-	}
+                int total_pages = Pageing_TotalPages(*pg);
+                printf("已自动跳转到最后一页查看新增结果。\n");
+                printf("新用户位于第 %d/%d 页\n", total_pages, total_pages);
+            }
+        }
+        else {
+            printf("\n用户添加失败！可能是用户名已存在或其他错误。\n");
+        }
+    }
+    else {
+        printf("\n已取消添加用户。\n");
+    }
 
-	press_any_key();
+    press_any_key();
 }
 
-// �޸��û����� - ʹ�ø�����ģ����ѯ����
-void Account_UI_Modify(paging_t* pg) {
-	clear_screen();
-	printf("�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T\n");
-	printf("                      �޸��û�\n");
-	printf("�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T\n");
+// 修改用户功能
+void Account_UI_Modify(void* pg_ptr) {
+    paging_t* pg = (paging_t*)pg_ptr;
+    clear_screen();
+    printf("═══════════════════════════════════════════════════════\n");
+    printf("                      修改用户\n");
+    printf("═══════════════════════════════════════════════════════\n");
 
-	if (List_IsEmpty(account_list)) {
-		printf("��ǰû���û����ݣ�\n");
-		press_any_key();
-		return;
-	}
+    int id_to_modify;
+    printf("请输入要修改的用户ID: ");
+    if (scanf("%d", &id_to_modify) != 1) {
+        printf("无效的用户ID！\n");
+        getchar();
+        press_any_key();
+        return;
+    }
+    getchar();  // 清空换行符
 
-	// 1. ���û���ģ������
-	char search_keyword[30];
-	printf("������Ҫ���ҵ��û�����֧��ģ��������: ");
-	fgets(search_keyword, 30, stdin);
-	search_keyword[strcspn(search_keyword, "\n")] = '\0';
+    // 查找用户
+    account_t* user_to_modify = Account_Srv_FindById(id_to_modify);
+    if (!user_to_modify) {
+        printf("未找到ID为 %d 的用户！\n", id_to_modify);
+        press_any_key();
+        return;
+    }
 
-	if (strlen(search_keyword) == 0) {
-		printf("�����ؼ��ֲ���Ϊ�գ�\n");
-		press_any_key();
-		return;
-	}
+    // 显示当前用户信息
+    printf("\n当前用户信息：\n");
+    printf("  ID: %d\n", user_to_modify->id);
+    printf("  用户名: %s\n", user_to_modify->username);
+    printf("  密码: %s\n", user_to_modify->password);
+    printf("  用户类型: %s\n", getAccountTypeString(user_to_modify->type));
+    printf("═══════════════════════════════════════════════════════\n");
 
-	// ʹ�ø�����ģ����ѯ����
-	account_list_t search_results = Account_Srv_FindByUsrName(search_keyword);
+    // 创建修改副本
+    account_t modified_user = *user_to_modify;
 
-	if (search_results == NULL) {
-		printf("û���ҵ����� '%s' ���û�\n", search_keyword);
-		press_any_key();
-		return;
-	}
+    int choice = 0;
+    int modified = 0;
 
-	// ��ʾ�������
-	printf("\n�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T\n");
-	printf("                   �������\n");
-	printf("�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T\n");
+    do {
+        printf("\n请选择要修改的项目：\n");
+        printf("1. 修改用户名\n");
+        printf("2. 修改密码\n");
+        printf("3. 修改用户类型\n");
+        printf("4. 查看当前修改\n");
+        printf("5. 保存修改\n");
+        printf("6. 取消修改\n");
+        printf("请选择: ");
 
-	printf("���  ID   �û���       �û�����\n");
-	printf("----  ----  ----------  --------------\n");
+        if (scanf("%d", &choice) != 1) {
+            printf("无效的选择！\n");
+            getchar(); getchar();
+            continue;
+        }
+        getchar();  // 清空换行符
 
-	int result_count = 0;
-	account_list_t pos = NULL;
-	List_ForEach(search_results, pos) {
-		if (pos) {
-			result_count++;
-			char* type_str = "δ֪";
-			switch (pos->data.type) {
-			case USR_ANOMY: type_str = "�����û�"; break;
-			case USR_CLERK: type_str = "����Ա"; break;
-			case USR_MANG:  type_str = "����"; break;
-			case USR_ADMIN: type_str = "����Ա"; break;
-			}
+        switch (choice) {
+        case 1:  // 修改用户名
+        {
+            int valid_username = 0;
+            while (!valid_username) {
+                printf("请输入新用户名 (3-20个字符, 不能包含空格): ");
+                fgets(modified_user.username, 30, stdin);
+                modified_user.username[strcspn(modified_user.username, "\n")] = '\0';
 
-			printf("%-4d  %-4d  %-10s  %s\n",
-				result_count,
-				pos->data.id,
-				pos->data.username,
-				type_str);
-		}
-	}
+                if (strlen(modified_user.username) < 3) {
+                    printf("错误：用户名太短，至少需要3个字符！\n");
+                }
+                else if (strlen(modified_user.username) > 20) {
+                    printf("错误：用户名太长，最多20个字符！\n");
+                }
+                else if (strchr(modified_user.username, ' ') != NULL) {
+                    printf("错误：用户名不能包含空格！\n");
+                }
+                else {
+                    // 检查用户名是否与其他用户重复（除了自己）
+                    int is_duplicate = 0;
+                    account_list_t cur = NULL;
+                    List_ForEach(account_list, cur) {
+                        if (cur->data.id != modified_user.id &&
+                            strcmp(cur->data.username, modified_user.username) == 0) {
+                            is_duplicate = 1;
+                            break;
+                        }
+                    }
 
-	printf("�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T\n");
-	printf("���ҵ� %d ��ƥ����û�\n", result_count);
+                    if (is_duplicate) {
+                        printf("错误：用户名已存在！\n");
+                    }
+                    else {
+                        valid_username = 1;
+                        modified = 1;
+                    }
+                }
+            }
+            printf("用户名已修改为: %s\n", modified_user.username);
+            break;
+        }
 
-	// 2. ���û�ָ��Ҫ�޸ĵ��û�ID
-	int target_id;
-	printf("\n������Ҫ�޸ĵ��û�ID: ");
-	scanf("%d", &target_id);
-	getchar();  // ��ջ��з�
+        case 2:  // 修改密码
+        {
+            int valid_password = 0;
+            while (!valid_password) {
+                printf("请输入新密码 (6-20个字符): ");
+                fgets(modified_user.password, 30, stdin);
+                modified_user.password[strcspn(modified_user.password, "\n")] = '\0';
 
-	// ���������û�ID�Ƿ������������
-	int id_found_in_results = 0;
-	account_list_t cur_result = NULL;
-	List_ForEach(search_results, cur_result) {
-		if (cur_result->data.id == target_id) {
-			id_found_in_results = 1;
-			break;
-		}
-	}
+                if (strlen(modified_user.password) < 6) {
+                    printf("错误：密码太短，至少需要6个字符！\n");
+                }
+                else if (strlen(modified_user.password) > 20) {
+                    printf("错误：密码太长，最多20个字符！\n");
+                }
+                else {
+                    valid_password = 1;
+                    modified = 1;
+                }
+            }
+            printf("密码已修改\n");
+            break;
+        }
 
-	if (!id_found_in_results) {
-		printf("����IDΪ %d ���û�������������У�\n", target_id);
-		List_Destroy(search_results, account_list_node_t);
-		press_any_key();
-		return;
-	}
+        case 3:  // 修改用户类型
+        {
+            int valid_type = 0;
+            while (!valid_type) {
+                printf("\n请选择新用户类型：\n");
+                printf("  1. 销售员 (USR_CLERK)\n");
+                printf("  2. 经理 (USR_MANG)\n");
+                printf("  3. 管理员 (USR_ADMIN)\n");
+                printf("  4. 匿名用户 (USR_ANOMY)\n");
+                printf("请输入类型编号 (1-4): ");
 
-	// ����Ŀ���û�
-	account_t* target_user = Account_Srv_FindById(target_id);
+                int type_choice;
+                if (scanf("%d", &type_choice) != 1) {
+                    printf("错误：请输入有效的数字！\n");
+                    while (getchar() != '\n');
+                    continue;
+                }
+                getchar();
 
-	if (target_user == NULL) {
-		printf("δ�ҵ�IDΪ %d ���û�\n", target_id);
-		List_Destroy(search_results, account_list_node_t);
-		press_any_key();
-		return;
-	}
+                switch (type_choice) {
+                case 1:
+                    modified_user.type = USR_CLERK;
+                    valid_type = 1;
+                    modified = 1;
+                    break;
+                case 2:
+                    modified_user.type = USR_MANG;
+                    valid_type = 1;
+                    modified = 1;
+                    break;
+                case 3:
+                    modified_user.type = USR_ADMIN;
+                    valid_type = 1;
+                    modified = 1;
+                    break;
+                case 4:
+                    modified_user.type = USR_ANOMY;
+                    valid_type = 1;
+                    modified = 1;
+                    break;
+                default:
+                    printf("错误：无效的类型编号，请重新选择！\n");
+                    break;
+                }
+            }
+            printf("用户类型已修改为: %s\n", getAccountTypeString(modified_user.type));
+            break;
+        }
 
-	// 3. ��ʾ��ǰ��Ϣ�������޸�����
-	printf("\n�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T\n");
-	printf("              �û� %d �ĵ�ǰ��Ϣ\n", target_user->id);
-	printf("�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T\n");
+        case 4:  // 查看当前修改
+            printf("\n当前修改信息：\n");
+            printf("  ID: %d\n", modified_user.id);
+            printf("  用户名: %s\n", modified_user.username);
+            printf("  密码: %s\n", modified_user.password);
+            printf("  用户类型: %s\n", getAccountTypeString(modified_user.type));
 
-	printf("��ǰ��Ϣ��\n");
-	printf("  �û���: %s\n", target_user->username);
-	printf("  ����: %s\n", target_user->password);
-	printf("  �û�����: %d", target_user->type);
+            if (modified) {
+                printf("状态: 已修改，等待保存\n");
+            }
+            else {
+                printf("状态: 未修改\n");
+            }
+            break;
 
-	switch (target_user->type) {
-	case USR_ANOMY: printf(" (�����û�)\n"); break;
-	case USR_CLERK: printf(" (����Ա)\n"); break;
-	case USR_MANG:  printf(" (����)\n"); break;
-	case USR_ADMIN: printf(" (����Ա)\n"); break;
-	}
+        case 5:  // 保存修改
+            if (!modified) {
+                printf("没有需要保存的修改！\n");
+                break;
+            }
 
-	printf("\n�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T\n");
-	printf("�������޸ĺ����Ϣ������򱣳�ԭֵ����\n");
+            printf("\n保存修改吗？(y/n): ");
+            char confirm_save;
+            scanf("%c", &confirm_save);
+            getchar();
 
-	// ׼���޸ĺ���û�����
-	account_t modified_user = *target_user;
+            if (confirm_save == 'y' || confirm_save == 'Y') {
+                int result = Account_Srv_Modify(&modified_user);
+                if (result) {
+                    printf("用户信息已成功保存！\n");
 
-	// �������û���
-	char new_username[30];
-	printf("���û�������ձ���ԭֵ '%s'��: ", target_user->username);
-	fgets(new_username, 30, stdin);
-	new_username[strcspn(new_username, "\n")] = '\0';
+                    // 如果是当前登录用户修改了自己的信息，更新全局变量
+                    if (gl_CurUser.id == modified_user.id) {
+                        gl_CurUser = modified_user;
+                    }
 
-	if (strlen(new_username) > 0) {
-		// ����û����Ƿ��������û��ظ��������Լ���
-		int username_exists = 0;
-		account_list_t cur = NULL;
-		List_ForEach(account_list, cur) {
-			if (cur->data.id != target_user->id && strcmp(cur->data.username, new_username) == 0) {
-				username_exists = 1;
-				break;
-			}
-		}
+                    // 重新加载数据
+                    Account_Srv_LoadAll();
+                    if (pg != NULL) {
+                        recalc_total_records(pg);
+                    }
+                }
+                else {
+                    printf("保存失败！可能是用户名已存在或其他错误。\n");
+                }
+            }
+            else {
+                printf("已取消保存。\n");
+            }
+            return;  // 退出修改界面
 
-		if (username_exists) {
-			printf("�����û��� '%s' �Ѵ��ڣ�\n", new_username);
-			List_Destroy(search_results, account_list_node_t);
-			press_any_key();
-			return;
-		}
+        case 6:  // 取消修改
+            printf("取消修改，不保存任何更改。\n");
+            return;  // 退出修改界面
 
-		strcpy(modified_user.username, new_username);
-	}
+        default:
+            printf("无效的选择！\n");
+            break;
+        }
 
-	// ����������
-	if (strcmp(target_user->username, "admin") == 0) {
-		printf("ע�⣺����Ա�˻����벻���޸ģ�������ԭֵ��\n");
-	}
-	else {
-		char new_password[30];
-		printf("�����루��ձ���ԭֵ '%s'��: ", target_user->password);
-		fgets(new_password, 30, stdin);
-		new_password[strcspn(new_password, "\n")] = '\0';
-
-		if (strlen(new_password) > 0) {
-			strcpy(modified_user.password, new_password);
-		}
-	}
-
-	// �������û�����
-	int new_type_choice = -1;
-	printf("���û����ͣ�0-����ԭֵ��1-����Ա��2-�����3-����Ա��4-������: ");
-	char type_input[10];
-	fgets(type_input, 10, stdin);
-	type_input[strcspn(type_input, "\n")] = '\0';
-
-	if (strlen(type_input) > 0) {
-		sscanf(type_input, "%d", &new_type_choice);
-
-		if (new_type_choice != 0) {  // 0��ʾ����ԭֵ
-			switch (new_type_choice) {
-			case 4: modified_user.type = USR_ANOMY; break;
-			case 1: modified_user.type = USR_CLERK; break;
-			case 2: modified_user.type = USR_MANG; break;
-			case 3: modified_user.type = USR_ADMIN; break;
-			default:
-				printf("������Ч���û����ͣ�\n");
-				List_Destroy(search_results, account_list_node_t);
-				press_any_key();
-				return;
-			}
-		}
-	}
-
-	// 4. ȷ���޸�
-	printf("\n�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T\n");
-	printf("             ��ȷ���޸ĺ����Ϣ\n");
-	printf("�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T\n");
-
-	printf("�޸ĺ���Ϣ��\n");
-	printf("  ID: %d\n", modified_user.id);
-	printf("  �û���: %s\n", modified_user.username);
-	printf("  ����: %s\n", modified_user.password);
-	printf("  �û�����: %d", modified_user.type);
-
-	switch (modified_user.type) {
-	case USR_ANOMY: printf(" (�����û�)\n"); break;
-	case USR_CLERK: printf(" (����Ա)\n"); break;
-	case USR_MANG:  printf(" (����)\n"); break;
-	case USR_ADMIN: printf(" (����Ա)\n"); break;
-	}
-
-	printf("�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T\n");
-	printf("ȷ���޸Ĵ��û���(y/n): ");
-
-	char confirm;
-	scanf("%c", &confirm);
-	getchar();  // ��ջ��з�
-
-	if (confirm == 'y' || confirm == 'Y') {
-		// 5. �������ݲ㺯���޸��û�
-		int result = Account_Srv_Modify(&modified_user);
-
-		if (result) {
-			printf("\n�û���Ϣ�޸ĳɹ���\n");
-
-			// 6. �����û����ڵ�ҳ��
-			int user_page_index = 0;
-			int found = 0;
-			account_list_t cur = NULL;
-
-			// �����û�����������
-			List_ForEach(account_list, cur) {
-				if (cur->data.id == target_user->id) {
-					found = 1;
-					break;
-				}
-				user_page_index++;
-			}
-
-			if (found) {
-				// ����ҳ�루��1��ʼ��
-				int user_page = (user_page_index / pg->pageSize) + 1;
-
-				// ��ת�����û����ڵ�ҳ��
-				int total_pages = Pageing_TotalPages(*pg);
-				if (user_page > total_pages) {
-					user_page = total_pages;
-				}
-
-				pg->offset = (user_page - 1) * pg->pageSize;
-				List_Paging(account_list, *pg, account_list_node_t);
-
-				printf("���Զ���ת���� %d ҳ�����û�����ҳ�棩\n", user_page);
-			}
-			else {
-				printf("�޷���λ�û������ص�ǰҳ�档\n");
-			}
-		}
-		else {
-			printf("\n�û���Ϣ�޸�ʧ�ܣ�\n");
-		}
-	}
-	else {
-		printf("\n��ȡ���޸ġ�\n");
-	}
-
-	// ���������������
-	List_Destroy(search_results, account_list_node_t);
-
-	press_any_key();
+        printf("\n按任意键继续...");
+        _getch();
+    } while (1);
 }
 
-// ɾ���û�����
-void Account_UI_Delete(paging_t* pg) {
-	clear_screen();
-	printf("�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T\n");
-	printf("                      ɾ���û�\n");
-	printf("�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T\n");
+// 删除用户功能
+void Account_UI_Delete(void* pg_ptr) {
+    paging_t* pg = (paging_t*)pg_ptr;
+    clear_screen();
+    printf("═══════════════════════════════════════════════════════\n");
+    printf("                      删除用户\n");
+    printf("═══════════════════════════════════════════════════════\n");
 
-	if (List_IsEmpty(account_list)) {
-		printf("��ǰû���û����ݣ�\n");
-		press_any_key();
-		return;
-	}
+    int id_to_delete;
+    printf("请输入要删除的用户ID: ");
+    if (scanf("%d", &id_to_delete) != 1) {
+        printf("无效的用户ID！\n");
+        getchar();
+        press_any_key();
+        return;
+    }
+    getchar();
 
-	// 1. ���û���ģ������
-	char search_keyword[30];
-	printf("������Ҫ���ҵ��û�����֧��ģ��������: ");
-	fgets(search_keyword, 30, stdin);
-	search_keyword[strcspn(search_keyword, "\n")] = '\0';
+    // 查找用户
+    account_t* user_to_delete = Account_Srv_FindById(id_to_delete);
+    if (!user_to_delete) {
+        printf("未找到ID为 %d 的用户！\n", id_to_delete);
+        press_any_key();
+        return;
+    }
 
-	if (strlen(search_keyword) == 0) {
-		printf("�����ؼ��ֲ���Ϊ�գ�\n");
-		press_any_key();
-		return;
-	}
+    // 显示用户信息
+    printf("\n要删除的用户信息：\n");
+    printf("  ID: %d\n", user_to_delete->id);
+    printf("  用户名: %s\n", user_to_delete->username);
+    printf("  密码: %s\n", user_to_delete->password);
+    printf("  用户类型: %s\n", getAccountTypeString(user_to_delete->type));
+    printf("═══════════════════════════════════════════════════════\n");
 
-	// ʹ��ģ����ѯ����
-	account_list_t search_results = Account_Srv_FindByUsrName(search_keyword);
+    // 如果是管理员用户，不能删除
+    if (strcmp(user_to_delete->username, "admin") == 0) {
+        printf("不能删除管理员账户！\n");
+        press_any_key();
+        return;
+    }
 
-	if (search_results == NULL) {
-		printf("û���ҵ����� '%s' ���û�\n", search_keyword);
-		press_any_key();
-		return;
-	}
+    // 如果是当前登录用户，不能删除
+    if (gl_CurUser.id == user_to_delete->id) {
+        printf("不能删除当前登录的账户！\n");
+        press_any_key();
+        return;
+    }
 
-	// ��ʾ�������
-	printf("\n�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T\n");
-	printf("                   �������\n");
-	printf("�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T\n");
+    // 确认删除
+    printf("确认删除此用户吗？此操作不可恢复！(y/n): ");
+    char confirm;
+    scanf("%c", &confirm);
+    getchar();
 
-	printf("���  ID   �û���       �û�����\n");
-	printf("----  ----  ----------  --------------\n");
+    if (confirm == 'y' || confirm == 'Y') {
+        int result = Account_Srv_Del(id_to_delete);
+        if (result) {
+            printf("用户删除成功！\n");
 
-	int result_count = 0;
-	account_list_t pos = NULL;
-	List_ForEach(search_results, pos) {
-		if (pos) {
-			result_count++;
-			char* type_str = "δ֪";
-			switch (pos->data.type) {
-			case USR_ANOMY: type_str = "�����û�"; break;
-			case USR_CLERK: type_str = "����Ա"; break;
-			case USR_MANG:  type_str = "����"; break;
-			case USR_ADMIN: type_str = "����Ա"; break;
-			}
+            // 重新加载数据
+            Account_Srv_LoadAll();
+            if (pg != NULL) {
+                recalc_total_records(pg);
+            }
+        }
+        else {
+            printf("删除失败！\n");
+        }
+    }
+    else {
+        printf("已取消删除。\n");
+    }
 
-			printf("%-4d  %-4d  %-10s  %s\n",
-				result_count,
-				pos->data.id,
-				pos->data.username,
-				type_str);
-		}
-	}
-
-	printf("�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T\n");
-	printf("���ҵ� %d ��ƥ����û�\n", result_count);
-
-	// 2. ���û�ָ��Ҫɾ�����û�ID
-	int target_id;
-	printf("\n������Ҫɾ�����û�ID: ");
-	scanf("%d", &target_id);
-	getchar();  // ��ջ��з�
-
-	// ���������û�ID�Ƿ������������
-	int id_found_in_results = 0;
-	account_list_t cur_result = NULL;
-	List_ForEach(search_results, cur_result) {
-		if (cur_result->data.id == target_id) {
-			id_found_in_results = 1;
-			break;
-		}
-	}
-
-	if (!id_found_in_results) {
-		printf("����IDΪ %d ���û�������������У�\n", target_id);
-		List_Destroy(search_results, account_list_node_t);
-		press_any_key();
-		return;
-	}
-
-	// ����Ŀ���û�
-	account_t* target_user = Account_Srv_FindById(target_id);
-
-	if (target_user == NULL) {
-		printf("δ�ҵ�IDΪ %d ���û�\n", target_id);
-		List_Destroy(search_results, account_list_node_t);
-		press_any_key();
-		return;
-	}
-
-	// ����Ƿ�Ϊadmin�û�
-	if (strcmp(target_user->username, "admin") == 0) {
-		printf("���󣺲���ɾ������Ա�˻���\n");
-		List_Destroy(search_results, account_list_node_t);
-		press_any_key();
-		return;
-	}
-
-	// ��ʾҪɾ�����û���Ϣ
-	printf("\n�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T\n");
-	printf("              ��Ҫɾ�����û���Ϣ\n");
-	printf("�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T\n");
-
-	printf("�û���Ϣ��\n");
-	printf("  ID: %d\n", target_user->id);
-	printf("  �û���: %s\n", target_user->username);
-	printf("  �û�����: %d", target_user->type);
-
-	switch (target_user->type) {
-	case USR_ANOMY: printf(" (�����û�)\n"); break;
-	case USR_CLERK: printf(" (����Ա)\n"); break;
-	case USR_MANG:  printf(" (����)\n"); break;
-	case USR_ADMIN: printf(" (����Ա)\n"); break;
-	}
-
-	printf("�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T\n");
-
-	// 3. ȷ��ɾ��
-	printf("���棺�˲������ɻָ���\n");
-	printf("ȷ��ɾ�����û���(y/n): ");
-
-	char confirm;
-	scanf("%c", &confirm);
-	getchar();  // ��ջ��з�
-
-	if (confirm == 'y' || confirm == 'Y') {
-		// 4. ��ɾ��ǰ�ȼ�¼�û����ڵ�ҳ��
-		int user_page_index = 0;
-		int found = 0;
-		account_list_t cur = NULL;
-
-		// �����û�����������
-		List_ForEach(account_list, cur) {
-			if (cur->data.id == target_user->id) {
-				found = 1;
-				break;
-			}
-			user_page_index++;
-		}
-
-		int user_page_before_delete = 0;
-		if (found) {
-			// ����ҳ�루��1��ʼ��
-			user_page_before_delete = (user_page_index / pg->pageSize) + 1;
-		}
-
-		// 5. �������ݲ㺯��ɾ���û�
-		int result = Account_Srv_Del(target_id);
-
-		if (result) {
-			printf("\n�û�ɾ���ɹ���\n");
-
-			// 6. ���¼����ܼ�¼��
-			int new_total = 0;
-			account_list_t cur2 = NULL;
-			List_ForEach(account_list, cur2) {
-				new_total++;
-			}
-			pg->totalRecords = new_total;
-
-			// 7. ����ɾ����Ӧ����ʾ��ҳ��
-			int target_page = user_page_before_delete;
-
-			// ��鵱ǰҳ�Ƿ�������
-			if (pg->totalRecords > 0) {
-				int total_pages = Pageing_TotalPages(*pg);
-
-				// ���Ŀ��ҳ������ҳ������ʾ���һҳ
-				if (target_page > total_pages) {
-					target_page = total_pages;
-				}
-
-				// ���Ŀ��ҳ��0���û������ڣ�������ʾ��һҳ
-				if (target_page <= 0) {
-					target_page = 1;
-				}
-
-				// ��ת��Ŀ��ҳ
-				pg->offset = (target_page - 1) * pg->pageSize;
-				List_Paging(account_list, *pg, account_list_node_t);
-
-				printf("���Զ���ת���� %d ҳ\n", target_page);
-			}
-			else {
-				// û�������ˣ����õ���һҳ
-				pg->offset = 0;
-				pg->curPos = NULL;
-				printf("�����û���ɾ�����б�Ϊ�ա�\n");
-			}
-		}
-		else {
-			printf("\n�û�ɾ��ʧ�ܣ�\n");
-		}
-	}
-	else {
-		printf("\n��ȡ��ɾ����\n");
-	}
-
-	// ���������������
-	List_Destroy(search_results, account_list_node_t);
-
-	press_any_key();
+    press_any_key();
 }
 
-// �����û�����
-void Account_UI_Search(paging_t* pg) {
-	clear_screen();
-	printf("�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T\n");
-	printf("                      �����û�\n");
-	printf("�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T\n");
+// 查找用户功能
+void Account_UI_Search(void* pg_ptr) {
+    paging_t* pg = (paging_t*)pg_ptr;
+    clear_screen();
+    printf("═══════════════════════════════════════════════════════\n");
+    printf("                      查找用户\n");
+    printf("═══════════════════════════════════════════════════════\n");
 
-	if (List_IsEmpty(account_list)) {
-		printf("��ǰû���û����ݣ�\n");
-		press_any_key();
-		return;
-	}
+    char search_username[30];
+    printf("请输入要查找的用户名（支持模糊查询）: ");
+    fgets(search_username, 30, stdin);
+    search_username[strcspn(search_username, "\n")] = '\0';
 
-	int search_again = 1;
+    if (strlen(search_username) == 0) {
+        printf("用户名不能为空！\n");
+        press_any_key();
+        return;
+    }
 
-	do {
-		clear_screen();
-		printf("�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T\n");
-		printf("                      �����û�\n");
-		printf("�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T\n");
+    // 查找用户
+    account_list_t result_list = Account_Srv_FindByUsrName(search_username);
+    if (!result_list) {
+        printf("未找到包含 '%s' 的用户！\n", search_username);
+        press_any_key();
+        return;
+    }
 
-		// 1. ���������ؼ���
-		char search_keyword[30];
-		printf("������Ҫ���ҵ��û�����֧��ģ��������: ");
-		fgets(search_keyword, 30, stdin);
-		search_keyword[strcspn(search_keyword, "\n")] = '\0';
+    // 显示查找结果
+    printf("\n═══════════════════════════════════════════════════════\n");
+    printf("                查找结果\n");
+    printf("═══════════════════════════════════════════════════════\n");
 
-		if (strlen(search_keyword) == 0) {
-			printf("�����ؼ��ֲ���Ϊ�գ�\n");
-			press_any_key();
-			continue;
-		}
+    int count = 0;
+    account_list_t cur = NULL;
+    List_ForEach(result_list, cur) {
+        if (cur) {
+            count++;
+            printf("\n用户 #%d:\n", count);
+            printf("  ID: %d\n", cur->data.id);
+            printf("  用户名: %s\n", cur->data.username);
+            printf("  密码: %s\n", cur->data.password);
+            printf("  用户类型: %s\n", getAccountTypeString(cur->data.type));
+        }
+    }
 
-		// 2. ʹ��ģ����ѯ����
-		account_list_t search_results = Account_Srv_FindByUsrName(search_keyword);
+    printf("\n═══════════════════════════════════════════════════════\n");
+    printf("共找到 %d 个用户\n", count);
+    printf("═══════════════════════════════════════════════════════\n");
 
-		if (search_results == NULL) {
-			printf("\nû���ҵ����� '%s' ���û�\n", search_keyword);
+    // 清理结果链表
+    List_Destroy(result_list, account_node_t);
 
-			printf("\n�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T\n");
-			printf("����ѡ�\n");
-			printf("  1. ��������\n");
-			printf("  0. �������˵�\n");
-			printf("�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T\n");
-			printf("��ѡ��: ");
-
-			int choice;
-			scanf("%d", &choice);
-			getchar();
-
-			if (choice == 0) {
-				search_again = 0;
-			}
-			continue;
-		}
-
-		// 3. ��ʾ�������
-		printf("\n�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T\n");
-		printf("                   �������\n");
-		printf("�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T\n");
-
-		printf("���  ID   �û���       ����       �û�����\n");
-		printf("----  ----  ----------  ----------  --------------\n");
-
-		int result_count = 0;
-		account_list_t pos = NULL;
-		List_ForEach(search_results, pos) {
-			if (pos) {
-				result_count++;
-				char* type_str = "δ֪";
-				switch (pos->data.type) {
-				case USR_ANOMY: type_str = "�����û�"; break;
-				case USR_CLERK: type_str = "����Ա"; break;
-				case USR_MANG:  type_str = "����"; break;
-				case USR_ADMIN: type_str = "����Ա"; break;
-				}
-
-				printf("%-4d  %-4d  %-10s  %-10s  %s\n",
-					result_count,
-					pos->data.id,
-					pos->data.username,
-					pos->data.password,
-					type_str);
-			}
-		}
-
-		printf("�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T\n");
-		printf("���ҵ� %d ������ '%s' ���û�\n", result_count, search_keyword);
-
-		// 4. ��ʾ��ϸ�û���Ϣѡ��
-		printf("\n�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T\n");
-		printf("����ѡ�\n");
-		printf("  1. �鿴�û���ϸ��Ϣ\n");
-		printf("  2. ��������\n");
-		printf("  0. �������˵�\n");
-		printf("�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T\n");
-		printf("��ѡ��: ");
-
-		int choice;
-		scanf("%d", &choice);
-		getchar();
-
-		switch (choice) {
-		case 1:  // �鿴�û���ϸ��Ϣ
-		{
-			int target_id;
-			printf("������Ҫ�鿴���û�ID: ");
-			scanf("%d", &target_id);
-			getchar();
-
-			// ���������û�ID�Ƿ������������
-			int id_found_in_results = 0;
-			account_list_t cur_result = NULL;
-			List_ForEach(search_results, cur_result) {
-				if (cur_result->data.id == target_id) {
-					id_found_in_results = 1;
-					break;
-				}
-			}
-
-			if (!id_found_in_results) {
-				printf("����IDΪ %d ���û�������������У�\n", target_id);
-				press_any_key();
-				break;
-			}
-
-			// ����Ŀ���û�
-			account_t* target_user = Account_Srv_FindById(target_id);
-
-			if (target_user) {
-				printf("\n�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T\n");
-				printf("                  �û���ϸ��Ϣ\n");
-				printf("�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T\n");
-
-				printf("�û�ID: %d\n", target_user->id);
-				printf("�û���: %s\n", target_user->username);
-				printf("����: %s\n", target_user->password);
-				printf("�û�����: %d", target_user->type);
-
-				switch (target_user->type) {
-				case USR_ANOMY: printf(" (�����û�)\n"); break;
-				case USR_CLERK: printf(" (����Ա)\n"); break;
-				case USR_MANG:  printf(" (����)\n"); break;
-				case USR_ADMIN: printf(" (����Ա)\n"); break;
-				}
-
-				printf("�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T\n");
-				press_any_key();
-			}
-			else {
-				printf("δ�ҵ�IDΪ %d ���û�\n", target_id);
-				press_any_key();
-			}
-		}
-		break;
-
-		case 2:  // ��������
-			search_again = 1;
-			break;
-
-		case 0:  // �������˵�
-			search_again = 0;
-			break;
-
-		default:
-			printf("��Ч��ѡ����������˵���\n");
-			press_any_key();
-			search_again = 0;
-			break;
-		}
-
-		// ���������������
-		List_Destroy(search_results, account_list_node_t);
-
-	} while (search_again);
+    press_any_key();
 }
 
-// ��ҳ���������
+// 分页浏览主界面
 void Account_UI_FetchAll() {
-	// ��������
-	int count = loadAllFromFile();
-	if (count == 0) {
-		printf("û���ҵ��û����ݣ�\n");
-		printf("������Ĭ�Ϲ���Ա�˻���\n");
-		press_any_key();
-	}
+    // 加载数据
+    int count = Account_Srv_LoadAll();
+    if (count == 0) {
+        printf("没有找到用户数据！\n");
+        printf("将创建默认管理员账户。\n");
+        press_any_key();
+    }
 
-	// ��ʼ����ҳ��
-	paging_t pg;
-	pg.pageSize = 5;  // Ĭ��ÿҳ5��
-	pg.totalRecords = 0;
-	pg.offset = 0;
+    // 初始化分页器
+    paging_t pg;
+    pg.pageSize = 5;  // 默认每页5条
+    pg.totalRecords = 0;
+    pg.offset = 0;
+    pg.curPos = NULL;
 
-	// �����ܼ�¼��
-	recalc_total_records(&pg);
+    // 计算总记录数
+    recalc_total_records(&pg);
 
-	// ��λ����һҳ
-	Paging_Locate_FirstPage(account_list, pg);
+    // 定位到第一页
+    Paging_Locate_FirstPage(account_list, pg);
 
-	int choice = 0;
-	int exit_browse = 0;
+    int choice = 0;
+    int exit_browse = 0;
 
-	do {
-		clear_screen();
+    do {
+        clear_screen();
 
-		// ��ʾ��ҳ��Ϣ�͵�ǰҳ����
-		display_page_info(&pg);
-		display_current_page(&pg);
+        // 显示分页信息和当前页数据
+        display_page_info(&pg);
+        display_current_page(&pg);
 
-		// ��ʾ�����˵����������·���
-		printf("\n�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T\n");
-		printf("                   �û��������\n");
-		printf("�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T\n");
-		printf("��ҳ������\n");
-		printf("  1. ��ҳ 2. ĩҳ 3. ��һҳ 4. ��һҳ\n");
-		printf("  5. ��ת��ָ��ҳ 6. �޸�ÿҳ��ʾ����\n");
-		printf("  7. ���¼�������\n");
-		printf("\n�û������\n");
-		printf("  8. �����û� 9. �޸��û� 10. ɾ���û� 11. �����û�\n");
-		printf("\nϵͳ������\n");
-		printf("  0. �˳�ϵͳ\n");
-		printf("�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T\n");
-		printf("������������: ");
+        // 显示操作菜单（在数据下方）
+        printf("\n═══════════════════════════════════════════════════════\n");
+        printf("                   用户管理操作\n");
+        printf("═══════════════════════════════════════════════════════\n");
+        printf("分页操作：\n");
+        printf("  1. 首页 2. 末页 3. 上一页 4. 下一页\n");
+        printf("  5. 跳转到指定页 6. 修改每页显示条数\n");
+        printf("  7. 重新加载数据\n");
+        printf("\n用户管理：\n");
+        printf("  8. 新增用户 9. 修改用户 10. 删除用户 11. 查找用户\n");
+        printf("\n系统操作：\n");
+        printf("  0. 退出系统\n");
+        printf("═══════════════════════════════════════════════════════\n");
+        printf("请输入操作编号: ");
 
-		scanf("%d", &choice);
-		getchar();  // ��ջ�����
+        if (scanf("%d", &choice) != 1) {
+            printf("输入错误！\n");
+            getchar(); getchar();
+            continue;
+        }
+        getchar();  // 清空缓冲区
 
-		switch (choice) {
-		case 1:  // ��ҳ
-			Paging_Locate_FirstPage(account_list, pg);
-			break;
+        switch (choice) {
+        case 1:  // 首页
+            Paging_Locate_FirstPage(account_list, pg);
+            break;
 
-		case 2:  // ĩҳ
-			Paging_Locate_LastPage(account_list, pg, account_list_node_t);
-			break;
+        case 2:  // 末页
+            Paging_Locate_LastPage(account_list, pg, account_node_t);
+            break;
 
-		case 3:  // ��һҳ
-			if (!Pageing_IsFirstPage(pg)) {
-				Paging_Locate_OffsetPage(account_list, pg, -1, account_list_node_t);
-			}
-			else {
-				printf("�Ѿ��ǵ�һҳ�ˣ�\n");
-				press_any_key();
-			}
-			break;
+        case 3:  // 上一页
+            if (!Pageing_IsFirstPage(pg)) {
+                Paging_Locate_OffsetPage(account_list, pg, -1, account_node_t);
+            }
+            else {
+                printf("已经是第一页了！\n");
+                press_any_key();
+            }
+            break;
 
-		case 4:  // ��һҳ
-			if (!Pageing_IsLastPage(pg)) {
-				Paging_Locate_OffsetPage(account_list, pg, 1, account_list_node_t);
-			}
-			else {
-				printf("�Ѿ������һҳ�ˣ�\n");
-				press_any_key();
-			}
-			break;
+        case 4:  // 下一页
+            if (!Pageing_IsLastPage(pg)) {
+                Paging_Locate_OffsetPage(account_list, pg, 1, account_node_t);
+            }
+            else {
+                printf("已经是最后一页了！\n");
+                press_any_key();
+            }
+            break;
 
-		case 5:  // ��ת��ָ��ҳ
-		{
-			int total_pages = Pageing_TotalPages(pg);
-			if (total_pages <= 1) {
-				printf("ֻ��1ҳ��������ת��\n");
-				press_any_key();
-				break;
-			}
+        case 5:  // 跳转到指定页
+        {
+            int total_pages = Pageing_TotalPages(pg);
+            if (total_pages <= 1) {
+                printf("只有1页，无需跳转！\n");
+                press_any_key();
+                break;
+            }
 
-			int target_page;
-			printf("������Ҫ��ת��ҳ�� (1-%d): ", total_pages);
-			scanf("%d", &target_page);
-			getchar();
+            int target_page;
+            printf("请输入要跳转的页码 (1-%d): ", total_pages);
+            if (scanf("%d", &target_page) != 1) {
+                printf("输入错误！\n");
+                getchar();
+                break;
+            }
+            getchar();
 
-			if (target_page < 1) target_page = 1;
-			if (target_page > total_pages) target_page = total_pages;
+            if (target_page < 1) target_page = 1;
+            if (target_page > total_pages) target_page = total_pages;
 
-			pg.offset = (target_page - 1) * pg.pageSize;
-			List_Paging(account_list, pg, account_list_node_t);
+            pg.offset = (target_page - 1) * pg.pageSize;
+            List_Paging(account_list, pg, account_node_t);
 
-			printf("����ת���� %d ҳ\n", target_page);
-			press_any_key();
-		}
-		break;
+            printf("已跳转到第 %d 页\n", target_page);
+            press_any_key();
+        }
+        break;
 
-		case 6:  // �޸�ÿҳ��ʾ����
-		{
-			int new_size;
-			printf("��ǰÿҳ��ʾ: %d ��\n", pg.pageSize);
-			printf("�������µ�ÿҳ��ʾ���� (1-20): ");
-			scanf("%d", &new_size);
-			getchar();
+        case 6:  // 修改每页显示条数
+        {
+            int new_size;
+            printf("当前每页显示: %d 条\n", pg.pageSize);
+            printf("请输入新的每页显示条数 (1-20): ");
+            if (scanf("%d", &new_size) != 1) {
+                printf("输入错误！\n");
+                getchar();
+                break;
+            }
+            getchar();
 
-			if (new_size < 1) new_size = 1;
-			if (new_size > 20) new_size = 20;
+            if (new_size < 1) new_size = 1;
+            if (new_size > 20) new_size = 20;
 
-			pg.pageSize = new_size;
+            pg.pageSize = new_size;
 
-			// ���¼����ܼ�¼��
-			recalc_total_records(&pg);
+            // 重新计算总记录数
+            recalc_total_records(&pg);
 
-			// ������ǰƫ����
-			if (pg.offset >= pg.totalRecords) {
-				pg.offset = 0;
-			}
+            // 调整当前偏移量
+            if (pg.offset >= pg.totalRecords && pg.totalRecords > 0) {
+                pg.offset = ((pg.totalRecords - 1) / pg.pageSize) * pg.pageSize;
+            }
 
-			// ���¶�λ
-			List_Paging(account_list, pg, account_list_node_t);
+            // 重新定位
+            Paging_Locate_FirstPage(account_list, pg);
 
-			printf("���޸�Ϊÿҳ��ʾ %d ��\n", new_size);
-			press_any_key();
-		}
-		break;
+            printf("已修改为每页显示 %d 条\n", new_size);
+            press_any_key();
+        }
+        break;
 
-		case 7:  // ���¼�������
-			count = loadAllFromFile();
-			if (count > 0) {
-				// ���¼����ܼ�¼��
-				recalc_total_records(&pg);
+        case 7:  // 重新加载数据
+            count = Account_Srv_LoadAll();
+            if (count > 0) {
+                // 重新计算总记录数
+                recalc_total_records(&pg);
 
-				// ���õ���һҳ
-				Paging_Locate_FirstPage(account_list, pg);
-				printf("�ɹ����¼��� %d ���û�\n", count);
-			}
-			else {
-				printf("��������ʧ�ܣ�\n");
-			}
-			press_any_key();
-			break;
+                // 重置到第一页
+                Paging_Locate_FirstPage(account_list, pg);
+                printf("成功重新加载 %d 个用户\n", count);
+            }
+            else {
+                printf("加载数据失败！\n");
+            }
+            press_any_key();
+            break;
 
-		case 8:  // �����û�
-			Account_UI_Add(&pg);
-			break;
+        case 8:  // 新增用户
+            Account_UI_Add(&pg);
+            break;
 
-		case 9:  // �޸��û�
-			Account_UI_Modify(&pg);
-			break;
+        case 9:  // 修改用户
+            Account_UI_Modify(&pg);
+            break;
 
-		case 10: // ɾ���û�
-			Account_UI_Delete(&pg);
-			break;
+        case 10: // 删除用户
+            Account_UI_Delete(&pg);
+            break;
 
-		case 11: // �����û�
-			Account_UI_Search(&pg);
-			break;
+        case 11: // 查找用户
+            Account_UI_Search(&pg);
+            break;
 
-		case 0:  // �˳�ϵͳ
-			exit_browse = 1;
-			if (account_list) {
-				List_Destroy(account_list, account_list_node_t);
-			}
-			printf("��лʹ�ã��ټ���\n");
-			exit(0);
-			break;
+        case 0:  // 退出系统
+            exit_browse = 1;
+            if (account_list) {
+                List_Destroy(account_list, account_node_t);
+            }
+            printf("感谢使用，再见！\n");
+            exit(0);
+            break;
 
-		default:
-			printf("��Ч��ѡ�������ѡ��\n");
-			press_any_key();
-			break;
-		}
+        default:
+            printf("无效的选项，请重新选择！\n");
+            press_any_key();
+            break;
+        }
 
-	} while (!exit_browse);
+    } while (!exit_browse);
 }
 
-// ��ȡ�������룬��ʾΪ*
-void read_password_stars(char* password, int max_length) {
-	int i = 0;
-	char ch;
-
-	while (1) {
-		ch = _getch();  // ����ʾ������ַ�
-
-		// �س�����������
-		if (ch == '\r' || ch == '\n') {
-			break;
-		}
-		// �˸������
-		else if (ch == '\b') {
-			if (i > 0) {
-				i--;
-				printf("\b \b");  // ɾ��һ���Ǻ�
-			}
-		}
-		// ��ͨ�ַ�
-		else if (i < max_length - 1 && isprint(ch)) {
-			password[i++] = ch;
-			printf("*");
-		}
-	}
-
-	password[i] = '\0';
-	printf("\n");
-}
-
-// ϵͳ��¼UI
+// 系统登录UI
 int SysLogin() {
-	int max_attempts = 3;  // ����Դ���
-	int attempts = 0;
+    int max_attempts = 3;  // 最大尝试次数
+    int attempts = 0;
 
-	while (attempts < max_attempts) {
-		system("cls");  // Windows����
+    while (attempts < max_attempts) {
+        clear_screen();
 
-		printf("�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T\n");
-		printf("                    �û���¼\n");
-		printf("�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T\n");
+        printf("═══════════════════════════════════════════════════════\n");
+        printf("                    用户登录\n");
+        printf("═══════════════════════════════════════════════════════\n");
 
-		// ��ʾʣ�ೢ�Դ���
-		printf("ʣ�ೢ�Դ���: %d/%d\n\n", max_attempts - attempts, max_attempts);
+        // 显示剩余尝试次数
+        printf("剩余尝试次数: %d/%d\n\n", max_attempts - attempts, max_attempts);
 
-		char username[30];
-		char password[30];
+        char username[30];
+        char password[30];
 
-		// �����û���
-		printf("�û���: ");
-		fgets(username, 30, stdin);
-		username[strcspn(username, "\n")] = '\0';  // �Ƴ����з�
+        // 输入用户名
+        printf("用户名: ");
+        fgets(username, 30, stdin);
+        username[strcspn(username, "\n")] = '\0';  // 移除换行符
 
-		if (strlen(username) == 0) {
-			printf("�û�������Ϊ�գ�\n");
-			printf("�����������...");
-			_getch();
-			continue;
-		}
+        if (strlen(username) == 0) {
+            printf("用户名不能为空！\n");
+            printf("按任意键继续...");
+            _getch();
+            continue;
+        }
 
-		// �������루��ʾΪ*��
-		printf("����: ");
-		read_password_stars(password, 30);
+        // 输入密码（显示为*）
+        printf("密码: ");
 
-		if (strlen(password) == 0) {
-			printf("���벻��Ϊ�գ�\n");
-			printf("�����������...");
-			_getch();
-			continue;
-		}
+        int i = 0;
+        char ch;
+        while (1) {
+            ch = _getch();
+            if (ch == '\r' || ch == '\n') {
+                break;
+            }
+            else if (ch == '\b') {
+                if (i > 0) {
+                    i--;
+                    printf("\b \b");
+                }
+            }
+            else if (i < 29 && isprint(ch)) {
+                password[i++] = ch;
+                printf("*");
+            }
+        }
+        password[i] = '\0';
+        printf("\n");
 
-		// ��֤�û�
-		int result = Account_Srv_Vertify(username, password);
+        if (strlen(password) == 0) {
+            printf("密码不能为空！\n");
+            printf("按任意键继续...");
+            _getch();
+            continue;
+        }
 
-		if (result) {
-			printf("\n��¼�ɹ���\n");
+        // 验证用户
+        int result = Account_Srv_Verify(username, password);
 
-			// ��ȡ��ǰ�û���Ϣ
-			account_list_t user_list = Account_Srv_FindByUsrName(username);
-			if (user_list) {
-				// ��ȡ��һ���û�
-				account_list_t first_user = NULL;
-				List_ForEach(user_list, first_user) {
-					if (first_user) {
-						printf("\n�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T\n");
-						printf("                    ��ӭ������%s��\n", username);
-						printf("�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T\n");
-						printf("�û�����: %s\n", getAccountTypeString(first_user->data.type));
-						printf("�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T�T\n");
-						break;
-					}
-				}
-				List_Destroy(user_list, account_list_node_t);
-			}
+        if (result) {
+            printf("\n登录成功！\n");
 
-			printf("�����������������...");
-			_getch();
-			return 1;  // ��¼�ɹ�
-		}
-		else {
-			attempts++;
-			printf("\n��¼ʧ�ܣ��û������������\n");
+            // 获取当前用户信息
+            account_list_t user_list = Account_Srv_FindByUsrName(username);
+            if (user_list) {
+                // 获取第一个用户
+                account_list_t first_user = NULL;
+                List_ForEach(user_list, first_user) {
+                    if (first_user) {
+                        printf("\n═══════════════════════════════════════════════════════\n");
+                        printf("                    欢迎回来，%s！\n", username);
+                        printf("═══════════════════════════════════════════════════════\n");
+                        printf("用户类型: %s\n", getAccountTypeString(first_user->data.type));
+                        printf("═══════════════════════════════════════════════════════\n");
+                        gl_CurUser = first_user->data;
+                        break;
+                    }
+                }
+                List_Destroy(user_list, account_node_t);
+            }
 
-			if (attempts < max_attempts) {
-				printf("����������³���...");
-				_getch();
-			}
-			else {
-				printf("�ѳ�������Դ�����ϵͳ���˳���\n");
-				printf("��������˳�...");
-				_getch();
-			}
-		}
-	}
+            printf("按任意键进入主界面...");
+            _getch();
+            return 1;  // 登录成功
+        }
+        else {
+            attempts++;
+            printf("\n登录失败！用户名或密码错误。\n");
 
-	return 0;  // ��¼ʧ��
+            if (attempts < max_attempts) {
+                printf("按任意键重新尝试...");
+                _getch();
+            }
+            else {
+                printf("已超过最大尝试次数，系统将退出。\n");
+                printf("按任意键退出...");
+                _getch();
+            }
+        }
+    }
+
+    return 0;  // 登录失败
 }

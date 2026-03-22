@@ -3,7 +3,7 @@
 #include "EntityKey.h"
 #include "EntityKey_Persist.h"
 #include <stdio.h>
-
+#define _CRT_SECURE_NO_WARNINGS
 long EntKey_Srv_GetNewKeys(const char entyName[], int count) {
     if (count < 1) {
         printf("数量不对\n");
