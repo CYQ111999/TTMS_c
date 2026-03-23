@@ -1,20 +1,16 @@
-﻿// Sale_UI.h
-#ifndef SALE_UI_H
+﻿#ifndef SALE_UI_H
 #define SALE_UI_H
 
-#include "Common.h"
+// 售票管理入口函数
+void Sale_UI_MgtEntry(void);
 
-#ifdef __cplusplus
-extern "C" {
+// 售票界面函数
+void Sale_UI_SellTicket(void);
+
+// 退票界面函数
+void Sale_UI_RefundTicket(void);
+
+// 查看演出计划函数
+void Sale_UI_ShowScheduler(int playID);
+
 #endif
-
-	void Sale_UI_MgtEntry(void);
-	void Sale_UI_RefundTicket(void);
-	void Sale_UI_ShowScheduler(int playID);
-	int Sale_UI_SellTicket(ticket_list_t tickList, seat_list_t seatList);
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* SALE_UI_H */

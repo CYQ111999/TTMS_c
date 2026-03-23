@@ -10,6 +10,7 @@
 
 #include <stdio.h>
 #include <ctype.h>
+#include <stdlib.h> 
 #include <time.h>
 #include "Common.h"
 #include "Play.h"
@@ -43,7 +44,7 @@ void Sale_UI_MgtEntry(void) {
         switch (choice) {
         case 1:
             printf("售票功能\n");
-            // 调用售票功能
+            Sale_UI_SellTicket();
             break;
         case 2:
             Sale_UI_RefundTicket();
@@ -68,88 +69,363 @@ void Sale_UI_MgtEntry(void) {
     } while (choice != 0);
 }
 
-// 售票界面
-int Sale_UI_SellTicket(ticket_list_t tickList, seat_list_t seatList) {
+// 售票界面 - 无参数版本
+void Sale_UI_SellTicket(void) {
+    int schedule_id = 0;
     int row, col;
     seat_t* seat = NULL;
     ticket_t* ticket = NULL;
-    int seat_id = -1;
 
     system("cls");
     printf("\n=================== 售票 ===================\n");
 
-    // 如果传入了ticket和seat链表，使用它们，否则新建
-    ticket_list_t localTicketList = tickList;
-    seat_list_t localSeatList = seatList;
+    // 1. 让用户选择演出计划
+    schedule_list_t schedule_list = NULL;
+    List_Init(schedule_list, schedule_list_node_t);
 
-    if (!localTicketList) {
-        // TODO: 获取票务列表
+    int schedule_count = Schedule_Srv_FetchAll(schedule_list);
+    if (schedule_count <= 0) {
+        printf("暂无演出计划！\n");
+        List_Destroy(schedule_list, schedule_list_node_t);
+        printf("按任意键返回...");
+        getchar();
+        return;
     }
 
-    if (!localSeatList) {
-        // TODO: 获取座位列表
+    // 显示演出计划列表
+    printf("\n============= 可选的演出计划 =============\n");
+    printf("序号 计划ID 剧目ID 演出厅 日期        时间     座位数\n");
+    printf("---------------------------------------------------\n");
+
+    int schedule_ids[100];
+    int index = 0;
+    schedule_list_node_t* schedule_node = (schedule_list_node_t*)schedule_list->node.next;
+
+    while (schedule_node != (schedule_list_node_t*)schedule_list) {
+        schedule_ids[index] = schedule_node->data.id;
+
+        printf("%-4d %-6d %-6d %-6d %04d-%02d-%02d %02d:%02d  %d\n",
+            index + 1,
+            schedule_node->data.id,
+            schedule_node->data.play_id,
+            schedule_node->data.studio_id,
+            schedule_node->data.date.year,
+            schedule_node->data.date.month,
+            schedule_node->data.date.day,
+            schedule_node->data.time.hour,
+            schedule_node->data.time.minute,
+            schedule_node->data.seat_count);
+
+        schedule_node = (schedule_list_node_t*)schedule_node->node.next;
+        index++;
+    }
+    printf("---------------------------------------------------\n");
+    printf("共 %d 个演出计划\n", index);
+
+    if (index == 0) {
+        printf("没有可用的演出计划！\n");
+        List_Destroy(schedule_list, schedule_list_node_t);
+        printf("按任意键返回...");
+        getchar();
+        return;
     }
 
-    while (1) {
-        printf("输入行和列（格式: 行 列）: ");
+    // 让用户选择演出计划
+    int selection = 0;
+    printf("\n请选择演出计划（序号）: ");
+    if (scanf("%d", &selection) != 1 || selection < 1 || selection > index) {
+        printf("选择无效！\n");
+        getchar();
+        List_Destroy(schedule_list, schedule_list_node_t);
+        printf("按任意键返回...");
+        getchar();
+        return;
+    }
+    getchar();
+
+    schedule_id = schedule_ids[selection - 1];
+
+    // 查找选中的演出计划详情
+    schedule_t selected_schedule;
+    int found = 0;
+    schedule_node = (schedule_list_node_t*)schedule_list->node.next;
+    while (schedule_node != (schedule_list_node_t*)schedule_list) {
+        if (schedule_node->data.id == schedule_id) {
+            memcpy(&selected_schedule, &(schedule_node->data), sizeof(schedule_t));
+            found = 1;
+            break;
+        }
+        schedule_node = (schedule_list_node_t*)schedule_node->node.next;
+    }
+
+    // 释放演出计划链表
+    List_Destroy(schedule_list, schedule_list_node_t);
+
+    if (!found) {
+        printf("找不到指定的演出计划！\n");
+        printf("按任意键返回...");
+        getchar();
+        return;
+    }
+
+    // 2. 获取该演出计划的票务列表
+    ticket_list_t ticketList = NULL;
+    List_Init(ticketList, ticket_list_node_t);
+
+    int ticket_count = Ticket_Perst_SelectByScheduleID(schedule_id, ticketList);
+    if (ticket_count <= 0) {
+        printf("该演出计划暂无票务信息！\n");
+        printf("按任意键返回...");
+        getchar();
+        return;
+    }
+
+    // 3. 获取演出厅的座位列表
+    seat_list_t seatList = NULL;
+    List_Init(seatList, seat_list_node_t);
+
+    int seat_count = Seat_Srv_FetchByRoomID(seatList, selected_schedule.studio_id);
+    if (seat_count <= 0) {
+        printf("该演出厅暂无座位信息！\n");
+        List_Destroy(ticketList, ticket_list_node_t);
+        printf("按任意键返回...");
+        getchar();
+        return;
+    }
+
+    // 4. 获取剧目信息
+    play_t play_info;
+    if (Play_Srv_FetchByID(selected_schedule.play_id, &play_info) != 1) {
+        printf("获取剧目信息失败！\n");
+        List_Destroy(ticketList, ticket_list_node_t);
+        List_Destroy(seatList, seat_list_node_t);
+        printf("按任意键返回...");
+        getchar();
+        return;
+    }
+
+    // 5. 显示演出计划信息
+    system("cls");
+    printf("\n=================== 演出计划信息 ===================\n");
+    printf("演出计划ID: %d\n", selected_schedule.id);
+    printf("剧目: %s\n", play_info.name);
+    printf("演出厅: %d号厅\n", selected_schedule.studio_id);
+    printf("演出时间: %04d-%02d-%02d %02d:%02d\n",
+        selected_schedule.date.year,
+        selected_schedule.date.month,
+        selected_schedule.date.day,
+        selected_schedule.time.hour,
+        selected_schedule.time.minute);
+    printf("座位总数: %d\n", selected_schedule.seat_count);
+    printf("======================================================\n");
+
+    // 6. 计算最大行和列
+    int max_row = 0, max_col = 0;
+    seat_list_node_t* seat_node = (seat_list_node_t*)seatList->node.next;
+    while (seat_node != (seat_list_node_t*)seatList) {
+        if (seat_node->data.row > max_row) max_row = seat_node->data.row;
+        if (seat_node->data.column > max_col) max_col = seat_node->data.column;
+        seat_node = (seat_list_node_t*)seat_node->node.next;
+    }
+
+    // 7. 显示座位图
+    printf("\n=================== 座位图 ===================\n");
+    printf("座位图说明：○=可售，●=已售，×=退票\n");
+    printf("\n  ");
+    for (int col_num = 1; col_num <= max_col; col_num++) {
+        printf("%2d", col_num);
+    }
+    printf("\n");
+
+    for (int r = 1; r <= max_row; r++) {
+        printf("%2d ", r);
+        for (int c = 1; c <= max_col; c++) {
+            int seat_found = 0;
+            int ticket_found = 0;
+            int ticket_status = 0;
+
+            // 查找座位
+            seat_node = (seat_list_node_t*)seatList->node.next;
+            while (seat_node != (seat_list_node_t*)seatList) {
+                if (seat_node->data.row == r && seat_node->data.column == c) {
+                    seat_found = 1;
+                    break;
+                }
+                seat_node = (seat_list_node_t*)seat_node->node.next;
+            }
+
+            if (!seat_found) {
+                printf("   ");  // 座位不存在
+                continue;
+            }
+
+            // 查找票的状态
+            ticket_list_node_t* ticket_node = (ticket_list_node_t*)ticketList->node.next;
+            while (ticket_node != (ticket_list_node_t*)ticketList) {
+                if (ticket_node->data.seat_id == seat_node->data.id) {
+                    ticket_found = 1;
+                    ticket_status = ticket_node->data.status;
+                    break;
+                }
+                ticket_node = (ticket_list_node_t*)ticket_node->node.next;
+            }
+
+            // 显示座位状态
+            if (ticket_found) {
+                if (ticket_status == 0) {  // 可售
+                    printf(" ○");
+                }
+                else if (ticket_status == 1) {  // 已售
+                    printf(" ●");
+                }
+                else {  // 退票
+                    printf(" ×");
+                }
+            }
+            else {
+                printf(" ○");  // 有座位但无票信息，默认可售
+            }
+        }
+        printf("\n");
+    }
+    printf("==============================================\n");
+
+    // 8. 售票循环
+    int continue_sell = 1;
+    int sold_count = 0;
+    float total_amount = 0.0;
+
+    while (continue_sell) {
+        printf("\n请输入要购买的座位（格式: 行 列），输入0 0结束购票: ");
         if (scanf("%d %d", &row, &col) != 2) {
-            printf("输入格式错误！\n");
+            printf("输入格式错误！请重新输入。\n");
             getchar();
             continue;
         }
         getchar();
 
+        if (row == 0 && col == 0) {
+            printf("购票结束。\n");
+            printf("已售票数: %d\n", sold_count);
+            printf("总金额: %.2f元\n", total_amount);
+            break;
+        }
+
+        if (row < 1 || row > max_row || col < 1 || col > max_col) {
+            printf("座位坐标超出范围！行数应在1-%d之间，列数应在1-%d之间。\n", max_row, max_col);
+            continue;
+        }
+
         // 查找座位
-        seat = Seat_Srv_FindByRowCol(localSeatList, row, col);
-        if (!seat) {
-            printf("座位不存在！\n");
-            continue;
-        }
-
-        // 查找票
-        ticket = Ticket_Srv_FetchBySeatID(localTicketList, seat->id);
-        if (!ticket) {
-            printf("该座位无对应票！\n");
-            continue;
-        }
-
-        if (ticket->status != 0) {  // 0表示可售
-            if (ticket->status == 1) {
-                printf("该票已售出！\n");
-            }
-            else if (ticket->status == 2) {
-                printf("该票已退票！\n");
-            }
-            else {
-                printf("该票不可售！\n");
-            }
-            continue;
-        }
-
-        // 显示确认信息
-        printf("\n座位信息：第%d行 第%d列\n", row, col);
-        printf("票价：%d元\n", ticket->price);
-        printf("确认购票？(y/n): ");
-        int ch = tolower(getchar());
-        getchar();
-
-        if (ch == 'y') {
-            // 更新票状态为已售
-            ticket->status = 1;  // 1表示已售
-            if (Ticket_Srv_Modify(ticket)) {
-                printf("售票成功！\n");
-                seat_id = seat->id;
+        seat = NULL;
+        seat_node = (seat_list_node_t*)seatList->node.next;
+        while (seat_node != (seat_list_node_t*)seatList) {
+            if (seat_node->data.row == row && seat_node->data.column == col) {
+                seat = &(seat_node->data);
                 break;
             }
+            seat_node = (seat_list_node_t*)seat_node->node.next;
+        }
+
+        if (seat == NULL) {
+            printf("该座位不存在！请重新输入。\n");
+            continue;
+        }
+
+        // 查找对应的票
+        ticket = NULL;
+        ticket_list_node_t* ticket_node = (ticket_list_node_t*)ticketList->node.next;
+        while (ticket_node != (ticket_list_node_t*)ticketList) {
+            if (ticket_node->data.seat_id == seat->id) {
+                ticket = &(ticket_node->data);
+                break;
+            }
+            ticket_node = (ticket_list_node_t*)ticket_node->node.next;
+        }
+
+        if (ticket == NULL) {
+            printf("错误：该座位没有对应的票务信息！\n");
+            continue;
+        }
+
+        // 检查票状态
+        if (ticket->status == 1) {
+            printf("该座位已售出，请选择其他座位。\n");
+            continue;
+        }
+        else if (ticket->status == 2) {
+            printf("该座位已退票，暂时不可售。\n");
+            continue;
+        }
+
+        // 确认购票
+        printf("\n=== 购票确认 ===\n");
+        printf("座位：第%d行第%d列\n", row, col);
+        printf("票价：%d元\n", ticket->price);
+        printf("确认购票吗?(y/n):");
+        char confirm;
+        confirm = getchar(); 
+        getchar();
+        if (confirm == 'y' || confirm == 'Y') {
+            // 修改票状态
+            ticket->status = 1;  // 已售
+
+            // 创建销售记录
+            sale_t sale;
+
+            // 根据Common.h中的结构体定义赋值
+            sale.ticket_id = ticket->id;        
+            sale.user_id = gl_CurUser.id;         // 当前用户ID
+            sale.value = ticket->price;           // 票价
+            sale.type = SALE_SELL;                // 交易类型
+
+            // 设置销售时间
+            time_t now = time(NULL);
+            struct tm* local_time = localtime(&now);
+            sale.date.year = local_time->tm_year + 1900; 
+            sale.date.month = local_time->tm_mon + 1;    
+            sale.date.day = local_time->tm_mday;      
+            sale.time.hour = local_time->tm_hour;           
+            sale.time.minute = local_time->tm_min;          
+            sale.time.second = local_time->tm_sec;          
+
+            // 调用销售服务添加记录
+            if (Sale_Srv_Add(&sale) == 1) {  // 注意：这里原来是 Sale_Srv Add
+                // 更新票状态
+                if (Ticket_Perst_Update(ticket) == 1) {
+                    printf("购票成功！座位号: %d\n", seat->id);
+                    sold_count++;
+                    total_amount += ticket->price;
+                }
+                else {
+                    printf("错误：更新票状态失败！\n");
+                }
+            }
             else {
-                printf("售票失败！\n");
+                printf("错误：创建销售记录失败！\n");
             }
         }
         else {
-            printf("取消购票。\n");
+            printf("已取消购票。\n");
+        }
+
+        // 询问是否继续购票
+        printf("\n是否继续购票？(y/n): ");
+        confirm = getchar();
+        getchar();
+
+        if (confirm == 'n' || confirm == 'N') {
+            continue_sell = 0;
         }
     }
-    return seat_id;
+
+    // 清理资源
+    List_Destroy(ticketList, ticket_list_node_t);
+    List_Destroy(seatList, seat_list_node_t);
+
+    printf("\n购票结束。\n");
+    printf("按任意键返回主菜单...");
+    getchar();
 }
 
 // 退票界面

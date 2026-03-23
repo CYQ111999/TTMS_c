@@ -135,6 +135,9 @@
     <ClInclude Include="Account_UI.h">
       <Filter>Header Files\View</Filter>
     </ClInclude>
+    <ClInclude Include="StaSales_UI.h">
+      <Filter>Header Files\View</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Utils.h">
@@ -220,6 +223,12 @@
     </ClCompile>
     <ClCompile Include="tickets.c">
       <Filter>Source Files\Persistence</Filter>
+    </ClCompile>
+    <ClCompile Include="StaSale.c">
+      <Filter>Source Files\Service</Filter>
+    </ClCompile>
+    <ClCompile Include="StaSale_UI.c">
+      <Filter>Source Files\View</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

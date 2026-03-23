@@ -45,6 +45,7 @@
     <ClInclude Include="Seat_Persist.h" />
     <ClInclude Include="Seat_UI.h" />
     <ClInclude Include="StaSales.h" />
+    <ClInclude Include="StaSales_UI.h" />
     <ClInclude Include="Studio.h" />
     <ClInclude Include="Studio_Persist.h" />
     <ClInclude Include="Studio_UI.h" />
@@ -73,6 +74,8 @@
     <ClCompile Include="Seat.c" />
     <ClCompile Include="Seat_Persist.c" />
     <ClCompile Include="Seat_UI.c" />
+    <ClCompile Include="StaSale.c" />
+    <ClCompile Include="StaSale_UI.c" />
     <ClCompile Include="Studio.c" />
     <ClCompile Include="Studio_Persist.c" />
     <ClCompile Include="Studio_UI.c" />

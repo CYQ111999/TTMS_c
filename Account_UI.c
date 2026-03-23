@@ -979,3 +979,8 @@ int SysLogin() {
 
     return 0;  // 登录失败
 }
+
+int Account_UI_Login(void) {
+    // 直接调用现有的 SysLogin 函数
+    return SysLogin();
+}

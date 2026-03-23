@@ -15,6 +15,7 @@ extern "C" {
 	void Account_UI_Delete(void* pg);
 	void Account_UI_Search(void* pg);
 	int SysLogin(void);
+	int Account_UI_Login(void);
 
 #ifdef __cplusplus
 }

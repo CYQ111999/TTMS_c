@@ -80,7 +80,11 @@ void Play_UI_MgtEntry(void) {
         case 'M':
         case 'm':
             printf("请输入要修改的剧目ID: ");
-            scanf("%d", &id);
+            if (scanf("%d", &id) != 1) {
+                printf("输入无效，请返回后重试。\n");
+                getchar(); // 清空缓冲区
+                break;
+            }
             if (Play_UI_Modify(id)) {
                 List_Free(gl_playList, play_list_node_t);
                 totalRecords = Play_Srv_FetchAll(gl_playList);
@@ -91,7 +95,11 @@ void Play_UI_MgtEntry(void) {
         case 'D':
         case 'd':
             printf("请输入要删除的剧目ID: ");
-            scanf("%d", &id);
+            if (scanf("%d", &id) != 1) {
+                printf("输入无效，请返回后重试。\n");
+                getchar();
+                break;
+            }
             if (Play_UI_Delete(id)) {
                 List_Free(gl_playList, play_list_node_t);
                 totalRecords = Play_Srv_FetchAll(gl_playList);
@@ -102,7 +110,11 @@ void Play_UI_MgtEntry(void) {
         case 'Q':
         case 'q':
             printf("请输入要查询的剧目ID: ");
-            scanf("%d", &id);
+            if (scanf("%d", &id) != 1) {
+                printf("输入无效，请返回后重试。\n");
+                getchar();
+                break;
+            }
             Play_UI_Query(id);
             break;
         case 'F':
@@ -136,25 +148,81 @@ int Play_UI_Add(void) {
     do {
         printf("\n===== 添加新剧目 =====\n");
         printf("剧目名称: ");
-        scanf("%s", newPlay.name);
+        if (scanf("%s", newPlay.name) != 1) {
+            printf("输入无效，操作取消。\n");
+            getchar();
+            return newCount;
+        }
+
         printf("剧目类型 (1-影片 2-歌剧 3-音乐会): ");
         int type;
-        scanf("%d", &type);
+        if (scanf("%d", &type) != 1 || type < 1 || type > 3) {
+            printf("输入无效，操作取消。\n");
+            getchar();
+            return newCount;
+        }
         newPlay.type = (play_type_t)type;
+
         printf("出品地区: ");
-        scanf("%s", newPlay.area);
+        if (scanf("%s", newPlay.area) != 1) {
+            printf("输入无效，操作取消。\n");
+            getchar();
+            return newCount;
+        }
+
         printf("剧目分级 (1-儿童 2-青少年 3-成人): ");
         int rating;
-        scanf("%d", &rating);
+        if (scanf("%d", &rating) != 1 || rating < 1 || rating > 3) {
+            printf("输入无效，操作取消。\n");
+            getchar();
+            return newCount;
+        }
         newPlay.rating = (play_rating_t)rating;
+
         printf("时长(分钟): ");
-        scanf("%d", &newPlay.duration);
+        if (scanf("%d", &newPlay.duration) != 1 || newPlay.duration <= 0) {
+            printf("输入无效，操作取消。\n");
+            getchar();
+            return newCount;
+        }
+
         printf("票价: ");
-        scanf("%d", &newPlay.price);
+        if (scanf("%d", &newPlay.price) != 1 || newPlay.price <= 0) {
+            printf("输入无效，操作取消。\n");
+            getchar();
+            return newCount;
+        }
+
         printf("上映日期(年 月 日): ");
-        scanf("%d %d %d", &newPlay.start_date.year,&newPlay.start_date.month, &newPlay.start_date.day);
+        int y, m, d;
+        if (scanf("%d %d %d", &y, &m, &d) != 3) {
+            printf("日期格式错误，操作取消。\n");
+            getchar();
+            return newCount;
+        }
+        // 简单验证日期合法性
+        if (y <= 0 || m < 1 || m > 12 || d < 1 || d > 31) {
+            printf("日期值超出合理范围，操作取消。\n");
+            return newCount;
+        }
+        newPlay.start_date.year = y;
+        newPlay.start_date.month = m;
+        newPlay.start_date.day = d;
+
         printf("下映日期(年 月 日): ");
-        scanf("%d %d %d", &newPlay.end_date.year,&newPlay.end_date.month, &newPlay.end_date.day);
+        if (scanf("%d %d %d", &y, &m, &d) != 3) {
+            printf("日期格式错误，操作取消。\n");
+            getchar();
+            return newCount;
+        }
+        if (y <= 0 || m < 1 || m > 12 || d < 1 || d > 31) {
+            printf("日期值超出合理范围，操作取消。\n");
+            return newCount;
+        }
+        newPlay.end_date.year = y;
+        newPlay.end_date.month = m;
+        newPlay.end_date.day = d;
+
         if (Play_Srv_Add(&newPlay)) {
             play_list_node_t* newNode = (play_list_node_t*)malloc(sizeof(play_list_node_t));
             newNode->data = newPlay;
@@ -187,13 +255,23 @@ int Play_UI_Modify(int id) {
         input[strcspn(input, "\n")] = '\0';
         strcpy(buf.name, input);
     }
+
     printf("原剧目类型: %d\n", buf.type);
     printf("新剧目类型(1-影片 2-歌剧 3-音乐会, 0不修改): ");
     int type;
-    scanf("%d", &type);
-    if (type >= 1 && type <= 3) {
+    if (scanf("%d", &type) != 1) {
+        printf("输入无效，修改取消。\n");
+        getchar();
+        return 0;
+    }
+    if (type != 0 && (type < 1 || type > 3)) {
+        printf("无效类型，修改取消。\n");
+        return 0;
+    }
+    if (type != 0) {
         buf.type = (play_type_t)type;
     }
+
     printf("原出品地区: %s\n", buf.area);
     printf("新出品地区(直接回车不修改): ");
     fgets(input, sizeof(input), stdin);
@@ -202,27 +280,55 @@ int Play_UI_Modify(int id) {
         input[strcspn(input, "\n")] = '\0';
         strcpy(buf.area, input);
     }
+
     printf("原剧目分级: %d\n", buf.rating);
     printf("新剧目分级(1-儿童 2-青少年 3-成人, 0不修改): ");
     int rating;
-    scanf("%d", &rating);
-    if (rating >= 1 && rating <= 3) {
+    if (scanf("%d", &rating) != 1) {
+        printf("输入无效，修改取消。\n");
+        getchar();
+        return 0;
+    }
+    if (rating != 0 && (rating < 1 || rating > 3)) {
+        printf("无效分级，修改取消。\n");
+        return 0;
+    }
+    if (rating != 0) {
         buf.rating = (play_rating_t)rating;
     }
+
     printf("原时长: %d分钟\n", buf.duration);
     printf("新时长(0不修改): ");
     int duration;
-    scanf("%d", &duration);
+    if (scanf("%d", &duration) != 1) {
+        printf("输入无效，修改取消。\n");
+        getchar();
+        return 0;
+    }
+    if (duration < 0) {
+        printf("时长不能为负数，修改取消。\n");
+        return 0;
+    }
     if (duration > 0) {
         buf.duration = duration;
     }
+
     printf("原票价: %d元\n", buf.price);
     printf("新票价(0不修改): ");
     int price;
-    scanf("%d", &price);
+    if (scanf("%d", &price) != 1) {
+        printf("输入无效，修改取消。\n");
+        getchar();
+        return 0;
+    }
+    if (price < 0) {
+        printf("票价不能为负数，修改取消。\n");
+        return 0;
+    }
     if (price > 0) {
         buf.price = price;
     }
+
     if (Play_Srv_Modify(&buf)) {
         play_list_node_t* p;
         List_ForEach(gl_playList, p) {
@@ -283,4 +389,77 @@ int Play_UI_Query(int id) {
         printf("剧目ID %d 不存在！\n", id);
         return 0;
     }
+}
+
+// 在 Play_UI.c 文件末尾添加这个函数
+int Play_UI_ListAll(void) {
+    system("cls");
+    printf("\n========================================\n");
+    printf("              所有剧目信息               \n");
+    printf("========================================\n");
+
+    // 初始化剧目列表
+    play_list_t playList = NULL;
+    List_Init(playList, play_list_node_t);
+
+    // 获取所有剧目
+    int total = Play_Srv_FetchAll(playList);
+
+    if (total == 0) {
+        printf("暂无剧目信息。\n");
+        printf("========================================\n");
+        List_Free(playList, play_list_node_t);
+        printf("按回车键返回...");
+        getchar();
+        return 0;
+    }
+
+    // 显示表头
+    printf("%-5s %-20s %-8s %-8s %-8s %-8s %-8s %-12s\n",
+        "ID", "名称", "类型", "地区", "分级", "时长", "价格", "上映-下映");
+    printf("----------------------------------------------------------------------------\n");
+
+    // 显示所有剧目
+    play_list_node_t* pos;
+    int count = 0;
+    List_ForEach(playList, pos) {
+        // 显示剧目信息
+        printf("%-5d %-20s ", pos->data.id, pos->data.name);
+
+        // 显示类型
+        switch (pos->data.type) {
+        case PLAY_TYPE_FILE:    printf("%-8s ", "影片"); break;
+        case PLAY_TYPE_OPEAR:   printf("%-8s ", "歌剧"); break;
+        case PLAY_TYPE_CONCERT: printf("%-8s ", "音乐会"); break;
+        default:                printf("%-8s ", "未知");
+        }
+
+        // 显示地区
+        printf("%-8s ", pos->data.area);
+
+        // 显示分级
+        switch (pos->data.rating) {
+        case PLAY_RATE_CHILD:   printf("%-8s ", "儿童"); break;
+        case PLAY_RATE_TEENAGE: printf("%-8s ", "青少年"); break;
+        case PLAY_RATE_ADULT:   printf("%-8s ", "成人"); break;
+        default:                printf("%-8s ", "未知");
+        }
+
+        // 显示时长、价格和日期
+        printf("%-8d %-8d ", pos->data.duration, pos->data.price);
+        printf("%04d-%02d-%02d至%04d-%02d-%02d\n",
+            pos->data.start_date.year, pos->data.start_date.month, pos->data.start_date.day,
+            pos->data.end_date.year, pos->data.end_date.month, pos->data.end_date.day);
+
+        count++;
+    }
+
+    printf("----------------------------------------------------------------------------\n");
+    printf("共 %d 个剧目\n", count);
+    printf("========================================\n");
+
+    // 释放列表
+    List_Free(playList, play_list_node_t);
+
+    return 1;
 }
