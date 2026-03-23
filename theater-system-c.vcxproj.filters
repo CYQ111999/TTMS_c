@@ -215,13 +215,7 @@
     <ClCompile Include="Studio_UI.c">
       <Filter>Source Files\View</Filter>
     </ClCompile>
-    <ClCompile Include="ticket.c">
-      <Filter>Source Files\Service</Filter>
-    </ClCompile>
     <ClCompile Include="Ticket_Persist.c">
-      <Filter>Source Files\Persistence</Filter>
-    </ClCompile>
-    <ClCompile Include="tickets.c">
       <Filter>Source Files\Persistence</Filter>
     </ClCompile>
     <ClCompile Include="StaSale.c">
@@ -229,6 +223,12 @@
     </ClCompile>
     <ClCompile Include="StaSale_UI.c">
       <Filter>Source Files\View</Filter>
+    </ClCompile>
+    <ClCompile Include="ticket.c">
+      <Filter>Source Files\View</Filter>
+    </ClCompile>
+    <ClCompile Include="tickets.c">
+      <Filter>Source Files\Service</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

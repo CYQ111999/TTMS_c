@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include "Common.h"
+#include "List.h"
 #define _CRT_SECURE_NO_WARNINGS
 // 全局变量定义
 char* filename = "data/account.dat";

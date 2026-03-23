@@ -15,4 +15,4 @@ int Ticket_Srv_FetchByID(int id, ticket_t* buf);
 int Ticket_SrvFetchByID(int id, ticket_t* buf);  // 解决链接错误
 ticket_list_t Ticket_Srv_FetchBySeatID(ticket_list_t list, int seat_id);
 
-#endif /* TICKETS_H_ */
+#endif

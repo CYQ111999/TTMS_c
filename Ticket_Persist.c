@@ -70,25 +70,21 @@ int Ticket_Perst_SelectByScheduleID(int schedule_id, ticket_list_t head) {
 int Ticket_Perst_Insert(int schedule_id, seat_list_t list) {
     FILE* fp = fopen("Ticket.dat", "ab");
     if (fp == NULL) return -1;
-
     schedule_t sch;
     if (Schedule_Perst_SelectByID(schedule_id, &sch) != 1) {
         fclose(fp);
         return -1;
     }
-
     play_t play;
     if (Play_Perst_SelectByID(sch.play_id, &play) != 1) {
         fclose(fp);
         return -1;
     }
-
     // 统计座位数量
     int count = 0;
     list_node_t* cur;
     for (cur = ((list_node_t*)list)->next; cur != (list_node_t*)list; cur = cur->next)
         count++;
-
     // 获取主键
 // 获取起始主键
     long startKey = EntKey_Perst_GetNewKeys("ticket", count);
@@ -96,7 +92,6 @@ int Ticket_Perst_Insert(int schedule_id, seat_list_t list) {
         fclose(fp);
         return -1;
     }
-
     int i = 0, rtn = 0;
     for (cur = ((list_node_t*)list)->next; cur != (list_node_t*)list; cur = cur->next) {
         seat_list_node_t* seat_node = (seat_list_node_t*)cur;
@@ -106,7 +101,6 @@ int Ticket_Perst_Insert(int schedule_id, seat_list_t list) {
         t.seat_id = seat_node->data.id;
         t.price = play.price;
         t.status = TICKET_AVL;
-
         if (fwrite(&t, sizeof(ticket_t), 1, fp) != 1) {
             rtn = -1;
             break;
@@ -149,14 +143,13 @@ int Ticket_Perst_Rem(int schedule_id) {
             }
         }
     }
-
     fclose(fp_tmp);
     fclose(fp_new);
     remove("TicketTmp.dat");
     return found;
 }
 
-// 更新票信息（用于退票等）
+// 更新票信息
 int Ticket_Perst_Update(const ticket_t* data) {
     FILE* fp = fopen("Ticket.dat", "rb+");
     if (fp == NULL) return 0;

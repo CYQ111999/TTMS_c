@@ -16,25 +16,25 @@ long EntKey_Perst_GetNewKeys(const char entyName[], int count) {
     int found = 0;                 // 查找标志：0-未找到，1-找到
     long newEntKey = 1;            // 新主键值，初始为1
     long filePosition = 0;         // 文件位置记录，用于回写更新
-    //步骤a: 初始化标志
+    //初始化标志
     found = 0;
     newEntKey = 1;
-    //步骤b: 参数检查 - 若count<1，则提示出错，返回0
+    //参数检查  若count<1，则提示出错，返回0
     if (count < 1) {
         printf("错误：请求的主键数量必须大于0！\n");
         return 0;
     }
-    //步骤c: 文件打开策略 - 严格按照教材描述
+    //文件打开策略 
     fp = fopen(ENTITY_KEY_FILE, "rb+");
     if (fp == NULL) {
         fp = fopen(ENTITY_KEY_FILE, "wb+");
     }
-    //步骤d: 文件打开检查 - 若打开失败，则提示出错，返回0
+    //文件打开检查 - 若打开失败，则提示出错，返回0
     if (fp == NULL) {
         printf("错误：无法打开或创建主键文件！\n");
         return 0;
     }
-    // 步骤e: 循环查找主键记录
+    // 循环查找主键记录
     // 重置文件指针到开头
     fseek(fp, 0, SEEK_SET);
     // 循环读取文件中的每条主键记录
@@ -60,11 +60,11 @@ long EntKey_Perst_GetNewKeys(const char entyName[], int count) {
             break;  // 找到并处理完成，退出循环
         }
     }
-    //步骤f: 若文件中没有该主键，即found=0
+    //若文件中没有该主键，即found=0
     if (!found) {
         // 创建新的主键记录
         entity_key_t newKey;
-        // 复制实体名，确保不超过40字符（entity_key_t定义的长度为41）
+        // 复制实体名，确保不超过40字符
         strncpy(newKey.name, entyName, 40);
         newKey.name[40] = '\0';  // 确保字符串终止
         // 设置主键值：分配count个，记录最大键值
@@ -80,7 +80,7 @@ long EntKey_Perst_GetNewKeys(const char entyName[], int count) {
         // 新实体的主键区间从1开始
         newEntKey = 1;
     }
-    // 步骤g: 关闭文件，返回newEntKey
+    // 关闭文件，返回newEntKey
     fclose(fp);
     printf("[主键服务] 为实体 '%s' 分配了 %d 个主键，起始值为: %ld\n",
         entyName, count, newEntKey);

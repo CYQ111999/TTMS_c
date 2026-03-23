@@ -20,7 +20,6 @@ int Studio_Perst_Insert(studio_t* data)
     int key = 0;                // 主键值
     // 调用 EntKey_Perst_GetNewKeys() 函数为新演出厅分配获取的主键key
     key = EntKey_Perst_GetNewKeys();
-    // 若主键分配失败，则直接返回0
     if (key <= 0) {
         printf("主键分配失败！\n");
         return 0;
@@ -28,22 +27,17 @@ int Studio_Perst_Insert(studio_t* data)
     // 若主键分配成功，则将传递过来的参数一一演出厅数据结点的ID设置为key
     data->id = key;
     // 添加演出厅的标志rtn置0（已在声明时完成）
-    // 以"ab"方式打开STUDIO_DATA_FILE文件
     fp = fopen(STUDIO_DATA_FILE, "ab");
-    //  若打开文件失败，则输出打开文件失败，返回0
     if (fp == NULL) {
         printf("打开文件失败！\n");
         return 0;
     }
-    // 若打开文件成功，则将一条演出厅记录写入文件，rtn=1
     if (fwrite(data, sizeof(studio_t), 1, fp) == 1) {
         rtn = 1;
     }
-    // 关闭文件
     if (fp != NULL) {
         fclose(fp);
     }
-    // 返回rtn
     return rtn;
 }
 
@@ -62,22 +56,17 @@ int Studio_Perst_Update(const studio_t* data)
         printf("错误：演出厅ID（%d）无效！\n", data->id);
         return 0;
     }
-    // 以"rb+"方式打开STUDIO_DATA_FILE文件
     fp = fopen(STUDIO_DATA_FILE, "rb+");
-
-    //  若打开失败，则输出打开文件失败，返回0
     if (fp == NULL) {
         printf("打开文件失败！\n");
         return 0;
     }
     // 循环读取文件中的演出厅记录
     while (1) {
-        // e) 从文件读一条演出厅记录至buf
+        //  从文件读一条演出厅记录至buf
         size_t read_count = fread(&buf, sizeof(studio_t), 1, fp);
-
-        // d) 若读到文件末尾，则转g)
         if (read_count != 1) {
-            break;  // 跳出循环，进入步骤g)
+            break;
         }
         if (buf.id == data->id) {
             // 将文件指针向文件头方向移动sizeof(studio_t)个字节
@@ -95,7 +84,6 @@ int Studio_Perst_Update(const studio_t* data)
         }
         // 否则，继续循环读取下一条记录
     }
-    // 关闭文件
     if (fp != NULL) {
         fclose(fp);
     }
@@ -120,17 +108,14 @@ int Studio_Perst_SelectByID(int ID, studio_t* buf)
         printf("错误：缓冲区指针为空！\n");
         return 0;
     }
-    //  以"rb"方式打开STUDIO_DATA_FILE文件
     fp = fopen(STUDIO_DATA_FILE, "rb");
-
-    //  若打开失败，则输出打开文件失败，返回0
     if (fp == NULL) {
         printf("打开文件失败！\n");
         return 0;
     }
     // 循环读取文件，查找匹配的ID
     while (1) {
-        // e) 从文件读一条演出厅记录至data
+        //  从文件读一条演出厅记录至data
         size_t read_count = fread(&data, sizeof(studio_t), 1, fp);
         //  若读到文件末尾，则转g)
         if (read_count != 1) {
@@ -142,9 +127,7 @@ int Studio_Perst_SelectByID(int ID, studio_t* buf)
             found = 1;
             break;
         }
-        // 否则，继续循环读取下一条记录
     }
-    // g) 关闭文件
     if (fp != NULL) {
         fclose(fp);
     }
@@ -159,10 +142,7 @@ int Studio_Perst_SelectAll(studio_list_t* list)
     studio_t data;              // 临时存储读取的数据
     studio_list_node_t* newNode = NULL; // 新节点
     studio_list_node_t* tail = NULL;    // 链表尾指针
-
-    //  以"rb"方式打开STUDIO_DATA_FILE文件
     fp = fopen(STUDIO_DATA_FILE, "rb");
-    // 若打开失败，则输出打开文件失败，返回0
     if (fp == NULL) {
         printf("打开文件失败！\n");
         return 0;
@@ -184,7 +164,6 @@ int Studio_Perst_SelectAll(studio_list_t* list)
     }
     // 循环读取文件
     while (1) {
-        // e) 若读到文件末尾，则转h)
         // 先尝试读取一条记录
         if (fread(&data, sizeof(studio_t), 1, fp) != 1) {
             // 可能到达文件末尾或读取失败，跳出循环转到步骤h)
@@ -218,7 +197,6 @@ int Studio_Perst_SelectAll(studio_list_t* list)
         }
         recCount++;
     }
-    //  关闭文件
     if (fp != NULL) {
         fclose(fp);
     }
@@ -245,14 +223,11 @@ int Studio_Perst_RemoveByID(int ID)
         return 0;
     }
     fclose(fp_check);
-
-    //  将演出厅原始数据文件 STUDIO_DATA_FILE 重命名为 STUDIO_DATA_TEMP_FILE
     rename_result = rename(STUDIO_DATA_FILE, STUDIO_DATA_TEMP_FILE);
     if (rename_result != 0) {
         printf("重命名文件失败！\n");
         return 0;
     }
-    //  以"rb"方式打开 STUDIO_DATA_TEMP_FILE 文件，以"wb"方式打开 STUDIO_DATA_FILE 文件
     fp_src = fopen(STUDIO_DATA_TEMP_FILE, "rb");
     if (fp_src == NULL) {
         printf("打开临时文件失败！\n");
@@ -288,20 +263,16 @@ int Studio_Perst_RemoveByID(int ID)
             }
         }
         else {
-            //  否则，found = 1
             found = 1;
             printf("找到并删除演出厅（ID: %d）\n", ID);
-            // 继续循环，但不写入该记录（即跳过）
         }
     }
-    //  关闭两个文件
     if (fp_src != NULL) {
         fclose(fp_src);
     }
     if (fp_dst != NULL) {
         fclose(fp_dst);
     }
-    // 删除临时文件
     if (remove(STUDIO_DATA_TEMP_FILE) != 0) {
         printf("删除临时文件失败\n");
     }

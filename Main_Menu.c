@@ -1,6 +1,5 @@
 ﻿// Main_Menu.c
 // 剧院票务管理系统主菜单
-// 严格按照教材规范编写
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,8 +15,6 @@
 #include "Salesanalysis_UI.h"  // 统计分析
 #include "Main_Menu.h"
 #define _CRT_SECURE_NO_WARNINGS
-
-// 内部函数声明
 static void show_menu(void);
 static int process_choice(int choice);
 
@@ -25,21 +22,18 @@ static int process_choice(int choice);
 int Main_Menu(void)
 {
     int choice = 0;
-    int ok = 0;  // 输入是否有效的标志
-
+    int ok = 0;  
     while (!ok)
     {
-        system("cls");  // 清屏
-        show_menu();    // 显示菜单
+        system("cls"); 
+        show_menu();  // 显示菜单
 
         if (scanf("%d", &choice) == 1)
         {
-            getchar();  // 清掉回车
-
-            // 根据用户类型检查输入范围
+            getchar();  
+            // 根据用户类型检查
             int min_choice = 1;
             int max_choice = 0;
-
             switch (gl_CurUser.type) {
             case USR_ADMIN:  // 管理员
                 max_choice = 3;
@@ -56,10 +50,8 @@ int Main_Menu(void)
             default:
                 max_choice = 0;
             }
-
             // 检查选择是否有效
             if (choice == 8 || choice == 9) {
-                // 8和9是所有用户都有的选项
                 ok = 1;
             }
             else if (choice >= min_choice && choice <= max_choice) {
@@ -71,8 +63,7 @@ int Main_Menu(void)
                 getchar();
                 continue;
             }
-
-            // 处理9选项（注销/退出）
+            // 处理9选项 注销/退出
             if (choice == 9) {
                 if (gl_CurUser.type == USR_ANOMY) {
                     printf("谢谢使用，再见！\n");
@@ -84,7 +75,6 @@ int Main_Menu(void)
                     printf("注销成功！\n");
                     printf("按任意键继续...");
                     getchar();
-
                     // 重置当前用户为匿名用户
                     gl_CurUser.type = USR_ANOMY;
                     strcpy(gl_CurUser.username, "Guest");
@@ -92,7 +82,6 @@ int Main_Menu(void)
                     continue;  // 重新开始循环
                 }
             }
-
             // 处理其他选择
             int result = process_choice(choice);
             if (result == 0) {
@@ -108,7 +97,7 @@ int Main_Menu(void)
         else
         {
             printf("输入格式不对\n");
-            while (getchar() != '\n');  // 清掉错误的输入
+            while (getchar() != '\n'); 
         }
     }
     return choice;
@@ -120,7 +109,6 @@ static void show_menu(void)
     printf("\n========================================\n");
     printf("        剧院票务管理系统 (TTMS)         \n");
     printf("========================================\n");
-
     // 显示当前用户
     const char* role = "";
     switch (gl_CurUser.type) {
@@ -130,7 +118,6 @@ static void show_menu(void)
     case USR_ANOMY: role = "匿名用户"; break;  
     default:        role = "未知角色";
     }
-
     if (gl_CurUser.type == USR_ANOMY) {
         printf("当前用户： 匿名用户\n"); 
     }
@@ -138,7 +125,6 @@ static void show_menu(void)
         printf("当前用户：[%s] %s\n", role, gl_CurUser.username);
     }
     printf("----------------------------------------\n");
-
     // 根据角色显示不同菜单
     switch (gl_CurUser.type) {
     case USR_ADMIN:  // 管理员
@@ -146,7 +132,6 @@ static void show_menu(void)
         printf("  2. 管理演出厅\n");
         printf("  3. 管理座位\n");
         break;
-
     case USR_MANG:   // 经理
         printf("  1. 管理剧目\n");
         printf("  2. 管理演出计划\n");
@@ -154,14 +139,12 @@ static void show_menu(void)
         printf("  4. 统计销售额\n");
         printf("  5. 统计票房\n");
         break;
-
     case USR_CLERK:  // 售票员
         printf("  1. 查询演出信息\n");
         printf("  2. 售票\n");
         printf("  3. 退票\n");
         printf("  4. 查看销售统计\n");
         break;
-
     case USR_ANOMY:  // 匿名用户
         printf("  1. 查询剧目信息\n");
         printf("  2. 查询演出计划\n");
@@ -170,22 +153,18 @@ static void show_menu(void)
         printf("  5. 登录系统\n");
         printf("  6. 注册新用户\n");
         break;
-
     default:
         printf("  错误：未知用户类型\n");
     }
-
-    // 公共选项
     printf("\n  8. 系统信息\n");
     printf("  9. %s\n", (gl_CurUser.type == USR_ANOMY) ? "退出系统" : "注销登录");
     printf("----------------------------------------\n");
     printf("请选择 (1-9): ");
 }
 
-// 处理用户的选择
 static int process_choice(int choice)
 {
-    // 系统信息（所有角色都一样）
+    // 系统信息
     if (choice == 8) {
         printf("\n========================================\n");
         printf("        系统信息：TTMS v1.0             \n");
@@ -196,7 +175,6 @@ static int process_choice(int choice)
         getchar();
         return 1;
     }
-
     // 根据角色处理
     switch (gl_CurUser.type) {
     case USR_ADMIN:  // 管理员
@@ -215,7 +193,6 @@ static int process_choice(int choice)
             getchar();
         }
         break;
-
     case USR_MANG:   // 经理
         switch (choice) {
         case 1:
@@ -238,7 +215,6 @@ static int process_choice(int choice)
             getchar();
         }
         break;
-
     case USR_CLERK:  // 售票员
         switch (choice) {
         case 1:
@@ -258,7 +234,6 @@ static int process_choice(int choice)
             getchar();
         }
         break;
-
     case USR_ANOMY:  // 匿名用户
         switch (choice) {
         case 1:  // 查询剧目信息
@@ -284,11 +259,9 @@ static int process_choice(int choice)
             getchar();
         }
         break;
-
     default:
         printf("用户类型错误\n");
         getchar();
     }
-
     return 1;
 }
