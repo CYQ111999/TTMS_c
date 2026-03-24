@@ -175,25 +175,49 @@ int Seat_Perst_SelectAll(seat_list_t list) {
     return recCount;
 }
 
-// 根据演出厅ID载入所有座位
-int Seat_Perst_SelectByRoomID(seat_list_t list, int roomID) {
+int Seat_Perst_SelectByRoomID(seat_list_t* list, int roomID) {
     int recCount = 0;
     seat_t data;
 
-    FILE* fp = fopen(SEAT_DATA_FILE, "rb");
-    if (!fp) {
+    // 1. 验证参数
+    if (list == NULL) {
+        printf("错误：链表指针参数为空！\n");
         return 0;
     }
 
-    List_Free(list, seat_list_node_t);
+    // 2. 打开文件
+    FILE* fp = fopen(SEAT_DATA_FILE, "rb");
+    if (!fp) {
+        printf("错误：无法打开座位数据文件！\n");
+        return 0;
+    }
 
+    // 3. 处理链表
+    if (*list != NULL) {
+        // 如果链表已存在，清理它
+        List_Free(*list, seat_list_node_t);
+    }
+    else {
+        // 如果链表不存在，初始化它
+        List_Init(*list, seat_list_node_t);
+        if (*list == NULL) {
+            printf("错误：无法初始化链表！\n");
+            fclose(fp);
+            return 0;
+        }
+    }
+
+    // 4. 读取数据
     while (fread(&data, sizeof(seat_t), 1, fp) == 1) {
         if (data.roomID == roomID) {
             seat_list_node_t* newNode = (seat_list_node_t*)malloc(sizeof(seat_list_node_t));
-            if (!newNode) break;
+            if (!newNode) {
+                printf("错误：内存分配失败！\n");
+                break;  
+            }
 
             newNode->data = data;
-            List_AddTail(list, newNode);
+            List_AddTail(*list, newNode);
             recCount++;
         }
     }

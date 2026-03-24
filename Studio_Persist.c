@@ -17,16 +17,23 @@ int Studio_Perst_Insert(studio_t* data)
 {
     int rtn = 0;                // 返回值标志
     FILE* fp = NULL;            // 文件指针
-    int key = 0;                // 主键值
-    // 调用 EntKey_Perst_GetNewKeys() 函数为新演出厅分配获取的主键key
-    key = EntKey_Perst_GetNewKeys();
+    long key = 0;               // 主键值，改为long类型以匹配函数返回值
+    // 参数验证
+    if (data == NULL) {
+        printf("错误：传入的数据指针为空！\n");
+        return 0;
+    }
+    // 调用 EntKey_Perst_GetNewKeys() 函数为新演出厅分配主键key
+    // 修复：传递正确的参数 - 实体名"studio"和数量1
+    key = EntKey_Perst_GetNewKeys("studio", 1);
     if (key <= 0) {
         printf("主键分配失败！\n");
         return 0;
     }
     // 若主键分配成功，则将传递过来的参数一一演出厅数据结点的ID设置为key
-    data->id = key;
-    // 添加演出厅的标志rtn置0（已在声明时完成）
+    data->id = (int)key;  // 注意类型转换
+    printf("[持久层] 分配主键 ID: %d\n", data->id);
+    // 3. 打开文件并写入数据
     fp = fopen(STUDIO_DATA_FILE, "ab");
     if (fp == NULL) {
         printf("打开文件失败！\n");
@@ -117,11 +124,9 @@ int Studio_Perst_SelectByID(int ID, studio_t* buf)
     while (1) {
         //  从文件读一条演出厅记录至data
         size_t read_count = fread(&data, sizeof(studio_t), 1, fp);
-        //  若读到文件末尾，则转g)
         if (read_count != 1) {
             break;
         }
-        //  若ID==data.id
         if (ID == data.id) {
             *buf = data;
             found = 1;
@@ -190,7 +195,7 @@ int Studio_Perst_SelectAll(studio_list_t* list)
 //用于在文件中删除指定ID的演出厅数据
 int Studio_Perst_RemoveByID(int ID)
 {
-    int found = 0;                      // a) 成功删除演出厅的标志found置0
+    int found = 0;                      //  成功删除演出厅的标志found置0
     FILE* fp_src = NULL;                // 源文件指针（临时文件）
     FILE* fp_dst = NULL;                // 目标文件指针（原始文件）
     studio_t data;                      // 临时存储读取的数据

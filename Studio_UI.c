@@ -16,6 +16,7 @@ void Studio_UI_MgtEntry(void) {
         printf("1. 添加演出厅\n");
         printf("2. 修改演出厅\n");
         printf("3. 删除演出厅\n");
+
         printf("4. 查询演出厅\n");
         printf("0. 返回\n");
         printf("==============================\n");
@@ -85,7 +86,7 @@ void Studio_UI_MgtEntry(void) {
                     printf("按回车键返回查询菜单...");
                     getchar();
                     break;
-                case 0: 
+                case 0:
                     break;
                 default:
                     printf("无效选择！\n");
@@ -105,36 +106,90 @@ void Studio_UI_MgtEntry(void) {
 }
 
 // 修改添加演出厅函数
-int Studio_UI_Add(void) {
+int Studio_UI_Add(void)
+{
+    int rtn = 0;
+    studio_t new_studio = { 0 };
+    char input_buffer[100];
+    int rows, cols;
     system("cls");
-    printf("\n========================================\n");
-    printf("            添加新演出厅                 \n");
     printf("========================================\n");
-    studio_t newStudio;
-    printf("演出厅名称: ");
-    fgets(newStudio.name, sizeof(newStudio.name), stdin);
-    newStudio.name[strcspn(newStudio.name, "\n")] = '\0'; 
-    printf("行数: ");
-    scanf("%d", &newStudio.rowsCount);
-    getchar();
-    printf("列数: ");
-    scanf("%d", &newStudio.colsCount);
-    getchar();
-    // 计算座位数
-    newStudio.seatsCount = newStudio.rowsCount * newStudio.colsCount;
-    if (Studio_Srv_Add(&newStudio)) {
-        printf("\n演出厅添加成功！\n");
-        printf("演出厅ID: %d\n", newStudio.id);
-        printf("演出厅名称: %s\n", newStudio.name);
-        printf("座位数: %d\n", newStudio.seatsCount);
-        return 1;
-    }
-    else {
-        printf("\n演出厅添加失败！\n");
+    printf("              添加新演出厅\n");
+    printf("========================================\n");
+    // 1. 输入演出厅名称
+    printf("请输入演出厅名称: ");
+    if (fgets(input_buffer, sizeof(input_buffer), stdin) == NULL) {
+        printf("输入错误。\n");
+        getchar();
         return 0;
     }
-}
+    input_buffer[strcspn(input_buffer, "\n")] = '\0';
+    if (strlen(input_buffer) == 0) {
+        printf("错误：演出厅名称不能为空！\n");
+        printf("按任意键返回...");
+        getchar();
+        return 0;
+    }
+    strncpy(new_studio.name, input_buffer, sizeof(new_studio.name) - 1);
+    new_studio.name[sizeof(new_studio.name) - 1] = '\0';
+    // 2. 输入行数
+    printf("请输入行数: ");
+    if (fgets(input_buffer, sizeof(input_buffer), stdin) == NULL ||
+        sscanf(input_buffer, "%d", &rows) != 1 || rows <= 0) {
+        printf("错误：行数必须为正整数！\n");
+        printf("按任意键返回...");
+        getchar();
+        return 0;
+    }
+    new_studio.rowsCount = rows;
+    // 3. 输入列数
+    printf("请输入列数: ");
+    if (fgets(input_buffer, sizeof(input_buffer), stdin) == NULL ||
+        sscanf(input_buffer, "%d", &cols) != 1 || cols <= 0) {
+        printf("错误：列数必须为正整数！\n");
+        printf("按任意键返回...");
+        getchar();
+        return 0;
+    }
+    new_studio.colsCount = cols;
+    // 4. 计算座位数
+    new_studio.seatsCount = rows * cols;
+    new_studio.id = 0; // 明确置0，表示等待分配
+    // 6. 显示确认信息 (此时ID尚未分配)
+    printf("\n-----------------------------------------------------------------------------\n");
+    printf("即将添加的演出厅信息：\n");
+    printf("  名称: %s\n", new_studio.name);
+    printf("  行数: %d\n", new_studio.rowsCount);
+    printf("  列数: %d\n", new_studio.colsCount);
+    printf("  座位数: %d\n", new_studio.seatsCount);
+    printf("  ID: (等待系统分配)\n");
+    printf("-------------------------------------------------------------------------------\n");
+    printf("\n确认添加此演出厅？(Y/N): ");
+    if (fgets(input_buffer, sizeof(input_buffer), stdin) == NULL ||
+        (input_buffer[0] != 'Y' && input_buffer[0] != 'y')) {
+        printf("添加操作已取消。\n");
+        printf("按任意键返回...");
+        getchar();
+        return 0;
+    }
+    rtn = Studio_Perst_Insert(&new_studio);
+    if (rtn) {
+        printf("\n 演出厅添加成功！\n");
+        // 此时 new_studio.id 已被 Studio_Perst_Insert 函数更新
+        printf("  系统分配的主键ID: %d\n", new_studio.id);
+        printf("  名称: %s\n", new_studio.name);
+        printf("  行数/列数/座位数: %d / %d / %d\n",
+            new_studio.rowsCount, new_studio.colsCount, new_studio.seatsCount);
+    }
+    else {
+        printf("\n 演出厅添加失败！\n");
+        // 可以提示用户检查数据文件权限或磁盘空间
+    }
 
+    printf("按任意键返回...");
+    getchar(); // 等待用户按键
+    return rtn;
+}
 // 修改演出厅函数
 int Studio_UI_Modify(int id) {
     system("cls");
@@ -179,7 +234,6 @@ int Studio_UI_Modify(int id) {
     }
     // 重新计算座位数
     studio.seatsCount = studio.rowsCount * studio.colsCount;
-
     if (Studio_Srv_Modify(&studio)) {
         printf("\n演出厅修改成功！\n");
         return 1;
@@ -212,7 +266,7 @@ int Studio_UI_Delete(int id) {
     printf("----------------------------------------\n");
     printf("输入Y确认删除，其他键取消: ");
     char confirm = getchar();
-    getchar(); 
+    getchar();
     if (confirm == 'Y' || confirm == 'y') {
         if (Studio_Srv_DeleteByID(id)) {
             printf("演出厅删除成功！\n");
@@ -229,7 +283,7 @@ int Studio_UI_Delete(int id) {
     }
 }
 
-//按ID查询的函数
+// 在 Studio_UI.c 中添加按ID查询的函数
 int Studio_UI_QueryById(int id) {
     system("cls");
     printf("\n========================================\n");
@@ -280,7 +334,6 @@ int Studio_UI_ListAll(void) {
     for (pos = (studio_list_node_t*)studioList->node.next;
         pos != (studio_list_node_t*)studioList;
         pos = (studio_list_node_t*)pos->node.next) {
-
         printf("%-5d %-20s %-8d %-8d %-8d\n",
             pos->data.id,
             pos->data.name,
