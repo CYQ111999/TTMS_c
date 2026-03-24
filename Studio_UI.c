@@ -229,7 +229,7 @@ int Studio_UI_Delete(int id) {
     }
 }
 
-// 在 Studio_UI.c 中添加按ID查询的函数
+//按ID查询的函数
 int Studio_UI_QueryById(int id) {
     system("cls");
     printf("\n========================================\n");

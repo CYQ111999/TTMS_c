@@ -134,67 +134,51 @@ int Studio_Perst_SelectByID(int ID, studio_t* buf)
     return found;
 }
 
-//用于从文件中载入所有演出厅数据
+// 用于从文件中载入所有演出厅数据
 int Studio_Perst_SelectAll(studio_list_t* list)
 {
-    int recCount = 0;           //  成功载入演出厅的个数recCount置0
+    int recCount = 0;           // 成功载入演出厅的个数recCount置0
     FILE* fp = NULL;            // 文件指针
     studio_t data;              // 临时存储读取的数据
     studio_list_node_t* newNode = NULL; // 新节点
-    studio_list_node_t* tail = NULL;    // 链表尾指针
     fp = fopen(STUDIO_DATA_FILE, "rb");
     if (fp == NULL) {
         printf("打开文件失败！\n");
         return 0;
     }
-
-    // 释放list链表
+    // 释放原有的链表
     if (*list != NULL) {
-        studio_list_node_t* current = *list;
-        studio_list_node_t* next;
-
-        while (current != NULL) {
-            // 通过 list_node_t 结构获取下一个节点
-            // 注意：list_node_t 应该包含 prev 和 next 指针
-            next = (studio_list_node_t*)(current->node.next);
-            free(current);
-            current = next;
-        }
+        List_Destroy(*list, studio_list_node_t);
         *list = NULL;
+    }
+    // 初始化链表
+    List_Init(*list, studio_list_node_t);
+    if (*list == NULL) {
+        printf("链表初始化失败！\n");
+        fclose(fp);
+        return 0;
     }
     // 循环读取文件
     while (1) {
         // 先尝试读取一条记录
         if (fread(&data, sizeof(studio_t), 1, fp) != 1) {
-            // 可能到达文件末尾或读取失败，跳出循环转到步骤h)
+            // 可能到达文件末尾或读取失败，跳出循环
             break;
         }
-        // 从文件读一条演出厅记录至data（已经通过fread完成）
-
-        //  新申请结点newNode，将data值置入新结点
+        // 新申请结点newNode，将data值置入新结点
         newNode = (studio_list_node_t*)malloc(sizeof(studio_list_node_t));
         if (newNode == NULL) {
             printf("内存分配失败！\n");
             fclose(fp);
+            // 释放已分配的链表
+            List_Destroy(*list, studio_list_node_t);
+            *list = NULL;
             return 0;
         }
         // 将data值复制到新节点
         newNode->data = data;
-        // 初始化链表节点的指针
-        newNode->node.next = NULL;
-        newNode->node.prev = NULL;
-
-        // 将新结点通过尾插法插入链表list中
-        if (*list == NULL) {
-            *list = newNode;
-            tail = newNode;
-        }
-        else {
-            // 链表不为空，插入到尾部
-            tail->node.next = (list_node_t*)newNode;
-            newNode->node.prev = (list_node_t*)tail;
-            tail = newNode;
-        }
+        // 将新结点通过尾插法插入链表list中（使用List.h宏）
+        List_AddTail(*list, newNode);
         recCount++;
     }
     if (fp != NULL) {

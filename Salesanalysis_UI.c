@@ -1,8 +1,5 @@
 ﻿// Salesanalysis_UI.c
 // 销售统计分析界面层
-// 严格按照电子书第190页规范编写
-// 整合 StaSales_UI.c 和 Salesanalysis_UI.c 的功能
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

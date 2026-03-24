@@ -137,12 +137,12 @@ int Studio_Srv_FetchByID(int ID, studio_t* buf)
 //获取所有演出厅的数据，形成以 list 为头指针的演出厅链表
 int Studio_Srv_FetchAll(studio_list_t* list)
 {
-    // 参数验证
-    if (list == NULL) {
-        return 0; 
-    }
     // 调用持久化层函数从文件中获取所有演出厅数据
     int result = Studio_Perst_SelectAll(list);
+    // 参数验证
+    if (list == NULL) {
+        return 0;
+    }
     return result;
 }
 
