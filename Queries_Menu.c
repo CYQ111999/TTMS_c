@@ -15,11 +15,18 @@
 
 // 内部函数：格式化显示单个演出计划
 static void display_schedule_detail(const schedule_t* sched, const play_t* play) {
-    if (!sched || !play) return;
+    if (!sched) return;
 
     printf("┌─────────────── 演出计划详情 ───────────────┐\n");
     printf("│ 计划ID: %-34d │\n", sched->id);
-    printf("│ 剧目  : %-34s │\n", play->name);
+
+    if (play) {
+        printf("│ 剧目  : %-34s │\n", play->name);
+    }
+    else {
+        printf("│ 剧目  : %-34s │\n", "未知剧目");
+    }
+
     printf("│ 日期  : %04d-%02d-%02d                     │\n",
         sched->date.year, sched->date.month, sched->date.day);
     printf("│ 时间  : %02d:%02d:%02d                     │\n",
@@ -29,9 +36,9 @@ static void display_schedule_detail(const schedule_t* sched, const play_t* play)
     printf("└─────────────────────────────────────────────┘\n");
 }
 
-// 内部函数：显示演出计划列表（分页）
-static void display_schedule_list(schedule_list_t list, int start, int pageSize) {
-    if (!list) {
+// 内部函数：显示演出计划列表（分页）- 使用分页宏
+static void display_schedule_list(schedule_list_t list, paging_t* paging) {
+    if (List_IsEmpty(list) || paging->totalRecords <= 0) {
         printf("暂无演出计划数据。\n");
         return;
     }
@@ -40,33 +47,33 @@ static void display_schedule_list(schedule_list_t list, int start, int pageSize)
         "计划ID", "剧目", "日期", "时间", "演出厅", "座位数");
     printf("────────────────────────────────────────────────────────────────────\n");
 
-    schedule_list_node_t* pos = list;
-    int count = 0;
+    schedule_list_node_t* pos = NULL;
+    int i = 0;
 
-    // 移动到起始位置
-    while (pos && count < start) {
-        pos = (schedule_list_node_t*)pos->node.next;
-        count++;
-    }
+    // 使用分页宏遍历当前页
+    Paging_ViewPage_ForEach(list, *paging, schedule_list_node_t, pos, i) {
+        // 跳过链表头节点
+        if (pos == list) {
+            continue;
+        }
 
-    // 显示一页数据
-    count = 0;
-    while (pos && count < pageSize && &pos->node != &(list)->node) {
-        // 获取关联的剧目信息（这里简化处理，实际应通过剧目ID查询）
+        // 获取关联的剧目信息
         play_t play_info = { 0 };
-        Play_Srv_FetchByID(pos->data.play_id, &play_info);
+        const char* play_name = "未知剧目";
+        if (Play_Srv_FetchByID(pos->data.play_id, &play_info)) {
+            play_name = play_info.name;
+        }
 
+        // 显示演出计划信息
         printf("%-8d %-20s %04d-%02d-%02d %02d:%02d  %-10d %-8d\n",
             pos->data.id,
-            play_info.name,
+            play_name,
             pos->data.date.year, pos->data.date.month, pos->data.date.day,
             pos->data.time.hour, pos->data.time.minute,
             pos->data.studio_id,
             pos->data.seat_count);
-
-        pos = (schedule_list_node_t*)pos->node.next;
-        count++;
     }
+
     printf("────────────────────────────────────────────────────────────────────\n");
 }
 
@@ -82,7 +89,7 @@ void Queries_Menu_Schedule(void) {
 
     // 1. 获取所有演出计划数据
     total = Schedule_Srv_FetchAll(&sched_list);
-    if (total <= 0 || !sched_list) {
+    if (total <= 0 || List_IsEmpty(sched_list)) {
         printf("\n当前没有演出计划。\n");
         printf("===================================================\n");
         printf("按任意键返回...");
@@ -94,19 +101,25 @@ void Queries_Menu_Schedule(void) {
     paging.totalRecords = total;
     paging.pageSize = QUERIES_PAGE_SIZE;
     paging.offset = 0;
+    paging.curPos = (void*)sched_list;  // 初始化为链表头
 
-    // 3. 主查询界面循环
+    // 3. 定位到第一页
+    Paging_Locate_FirstPage(sched_list, paging);
+
+    // 4. 主查询界面循环
     do {
         system("cls");
         printf("\n=================== 演出计划查询 (共%d条) ===================\n", total);
 
         // 显示当前页
-        display_schedule_list(sched_list, paging.offset, paging.pageSize);
+        display_schedule_list(sched_list, &paging);
+
+        // 计算分页信息
+        int current_page = Pageing_CurPage(paging);
+        int total_pages = Pageing_TotalPages(paging);
 
         // 显示分页信息
-        printf("\n 第 [%d/%d] 页",
-            (paging.offset / paging.pageSize) + 1,
-            (total + paging.pageSize - 1) / paging.pageSize);
+        printf("\n 第 [%d/%d] 页", current_page, total_pages);
 
         // 显示操作菜单
         printf("        [D]查看详情  [P]上一页  [N]下一页  [R]返回\n");
@@ -124,18 +137,24 @@ void Queries_Menu_Schedule(void) {
                 getchar();
 
                 // 查找并显示详情
-                schedule_list_node_t* pos = sched_list;
+                schedule_list_node_t* pos = NULL;
                 int found = 0;
 
-                while (pos && &pos->node != &(sched_list)->node) {
-                    if (pos->data.id == sched_id) {
-                        play_t play_info = { 0 };
-                        Play_Srv_FetchByID(pos->data.play_id, &play_info);
-                        display_schedule_detail(&pos->data, &play_info);
-                        found = 1;
-                        break;
+                // 遍历整个链表查找
+                List_ForEach(sched_list, pos) {
+                    if (pos != sched_list) {  // 跳过链表头
+                        schedule_list_node_t* node = (schedule_list_node_t*)pos;
+                        if (node->data.id == sched_id) {
+                            play_t play_info = { 0 };
+                            play_t* p_play = NULL;
+                            if (Play_Srv_FetchByID(node->data.play_id, &play_info)) {
+                                p_play = &play_info;
+                            }
+                            display_schedule_detail(&node->data, p_play);
+                            found = 1;
+                            break;
+                        }
                     }
-                    pos = (schedule_list_node_t*)pos->node.next;
                 }
 
                 if (!found) {
@@ -154,22 +173,26 @@ void Queries_Menu_Schedule(void) {
 
         case 'P':
         case 'p':
-            if (paging.offset >= paging.pageSize) {
-                paging.offset -= paging.pageSize;
+            if (!Pageing_IsFirstPage(paging)) {
+                Paging_Locate_OffsetPage(sched_list, paging, -1, schedule_list_node_t);
+                printf("跳转到上一页...\n");
             }
             else {
                 printf("已经是第一页。\n");
+                printf("按任意键继续...");
                 getchar();
             }
             break;
 
         case 'N':
         case 'n':
-            if (paging.offset + paging.pageSize < total) {
-                paging.offset += paging.pageSize;
+            if (!Pageing_IsLastPage(paging)) {
+                Paging_Locate_OffsetPage(sched_list, paging, 1, schedule_list_node_t);
+                printf("跳转到下一页...\n");
             }
             else {
                 printf("已经是最后一页。\n");
+                printf("按任意键继续...");
                 getchar();
             }
             break;
@@ -188,8 +211,9 @@ void Queries_Menu_Schedule(void) {
 
     } while (choice != 'R' && choice != 'r');
 
-    // 4. 清理资源
+    // 5. 清理资源
     if (sched_list) {
+        // 使用您提供的宏销毁链表
         List_Destroy(sched_list, schedule_list_node_t);
     }
 

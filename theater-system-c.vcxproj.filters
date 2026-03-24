@@ -167,9 +167,6 @@
     <ClCompile Include="Play.c">
       <Filter>Source Files\Service</Filter>
     </ClCompile>
-    <ClCompile Include="Play_Persist.c">
-      <Filter>Source Files\Persistence</Filter>
-    </ClCompile>
     <ClCompile Include="Play_UI.c">
       <Filter>Source Files\View</Filter>
     </ClCompile>
@@ -229,6 +226,9 @@
     </ClCompile>
     <ClCompile Include="tickets.c">
       <Filter>Source Files\Service</Filter>
+    </ClCompile>
+    <ClCompile Include="Play_Persist.c">
+      <Filter>Header Files\View</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
