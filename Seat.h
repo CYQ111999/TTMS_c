@@ -22,10 +22,10 @@ int Seat_Srv_DeleteByID(int ID);
 int Seat_Srv_DeleteAllByRoomID(int roomID);
 
 // 根据演出厅ID获取所有座位
-int Seat_Srv_FetchByRoomID(seat_list_t list, int roomID);
+int Seat_Srv_FetchByRoomID(seat_list_t* list, int roomID);
 
 // 根据演出厅ID获取有效座位
-int Seat_Srv_FetchValidByRoomID(seat_list_t list, int roomID);
+int Seat_Srv_FetchValidByRoomID(seat_list_t* list, int roomID);
 
 // 根据行列号获取座位节点
 seat_list_node_t* Seat_Srv_FindByRowCol(seat_list_t list, int row, int column);

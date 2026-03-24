@@ -13,21 +13,13 @@
 int Schedule_Srv_FetchByPlay(int play_id, schedule_list_t* list)
 {
     int rtn = 0;
-
     // 参数验证
     if (list == NULL || play_id <= 0) {
         printf("错误：Schedule_Srv_FetchByPlay 参数无效\n");
         return 0;
     }
-
-    printf("调试：Schedule_Srv_FetchByPlay 被调用，list地址 = %p, *list = %p\n",
-        (void*)list, (void*)*list);
-
     // 将参数list和play_id传递给持久化层根据剧目ID载入演出计划函数
     rtn = Schedule_Perst_SelectByPlay(list, play_id);
-
-    printf("调试：Schedule_Srv_FetchByPlay 返回 %d 条记录\n", rtn);
-
     return rtn;
 }
 // 添加新演出计划
