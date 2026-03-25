@@ -62,17 +62,7 @@ int Schedule_Srv_Add(schedule_t* data)
         printf("错误：时间无效\n");
         return 0;
     }
-
-    printf("调试：调用持久层插入数据...\n");
     rtn = Schedule_Perst_Insert(data);
-
-    if (rtn) {
-        printf("调试：插入成功，分配的ID=%d\n", data->id);
-    }
-    else {
-        printf("调试：插入失败\n");
-    }
-
     return rtn;
 }
 

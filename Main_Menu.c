@@ -167,9 +167,9 @@ static int process_choice(int choice)
     // 系统信息
     if (choice == 8) {
         printf("\n========================================\n");
-        printf("        系统信息：TTMS v1.0             \n");
+        printf("        系统信息：TTMS              \n");
         printf("        五人小组项目                    \n");
-        printf("        版本：2024                      \n");
+        printf("        版本：2026                      \n");
         printf("========================================\n");
         printf("按回车键返回...");
         getchar();

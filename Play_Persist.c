@@ -69,20 +69,16 @@ int Play_Perst_SelectByName(play_list_t list, char condt[])
 int Play_Perst_SelectAll(play_list_t list) {
     int recCount = 0;
     play_t data;
-
     // 参数验证
     if (list == NULL) {
         return 0;
     }
-
     FILE* fp = fopen(PLAY_DATA_FILE, "rb");
     if (!fp) {
         return 0;
     }
-
     // 清空链表
     List_Free(list, play_list_node_t);
-
     // 读取文件并构建链表
     while (fread(&data, sizeof(play_t), 1, fp) == 1) {
         play_list_node_t* newNode = (play_list_node_t*)malloc(sizeof(play_list_node_t));
@@ -93,7 +89,6 @@ int Play_Perst_SelectAll(play_list_t list) {
         List_AddTail(list, newNode);
         recCount++;
     }
-
     fclose(fp);
     return recCount;
 }
@@ -118,7 +113,6 @@ int Play_Perst_Update(const play_t* data) {
     if (!fp) {
         return 0;
     }
-
     while (fread(&buf, sizeof(play_t), 1, fp) == 1) {
         if (buf.id == data->id) {
             fseek(fp, -(long)sizeof(play_t), SEEK_CUR);
@@ -134,20 +128,16 @@ int Play_Perst_Update(const play_t* data) {
 int Play_Perst_RemByID(int id) {
     int found = 0;
     play_t buf;
-
     if (rename(PLAY_DATA_FILE, PLAY_DATA_TEMP_FILE) != 0) {
         return 0;
     }
-
     FILE* fpSrc = fopen(PLAY_DATA_TEMP_FILE, "rb");
     FILE* fpDst = fopen(PLAY_DATA_FILE, "wb");
-
     if (!fpSrc || !fpDst) {
         if (fpSrc) fclose(fpSrc);
         if (fpDst) fclose(fpDst);
         return 0;
     }
-
     while (fread(&buf, sizeof(play_t), 1, fpSrc) == 1) {
         if (buf.id != id) {
             fwrite(&buf, sizeof(play_t), 1, fpDst);
@@ -156,23 +146,19 @@ int Play_Perst_RemByID(int id) {
             found = 1;
         }
     }
-
     fclose(fpSrc);
     fclose(fpDst);
     remove(PLAY_DATA_TEMP_FILE);
-
     return found;
 }
 
 int Play_Perst_SelectByID(int id, play_t* buf) {
     int found = 0;
     play_t data;
-
     FILE* fp = fopen(PLAY_DATA_FILE, "rb");
     if (!fp) {
         return 0;
     }
-
     while (fread(&data, sizeof(play_t), 1, fp) == 1) {
         if (data.id == id) {
             *buf = data;
@@ -180,7 +166,6 @@ int Play_Perst_SelectByID(int id, play_t* buf) {
             break;
         }
     }
-
     fclose(fp);
     return found;
 }

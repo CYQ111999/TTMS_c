@@ -1,5 +1,4 @@
 ﻿//zyp
-/// Persistence / Schedule_Persist.c
 #define _CRT_SECURE_NO_WARNINGS
 #include "Common.h"
 #include "List.h"
@@ -28,9 +27,6 @@ int Schedule_Perst_SelectByPlay(schedule_list_t* list, int play_id)
     schedule_t data = { 0 };  // 使用 {0} 初始化
     schedule_list_node_t* newNode = NULL;
     int recCount = 0;
-
-    printf("调试：开始查找 play_id=%d 的演出计划\n", play_id);
-
     // 验证参数
     if (list == NULL) {
         printf("错误：链表指针为NULL\n");
@@ -39,11 +35,6 @@ int Schedule_Perst_SelectByPlay(schedule_list_t* list, int play_id)
 
     // 打开文件
     fp = fopen(SCHEDULE_DATA_FILE, "rb");
-    if (fp == NULL) {
-        printf("调试：文件 %s 不存在或无法打开\n", SCHEDULE_DATA_FILE);
-        return 0;
-    }
-
     // 如果链表为空，创建头节点
     if (*list == NULL) {
         *list = (schedule_list_node_t*)malloc(sizeof(schedule_list_node_t));
@@ -62,14 +53,9 @@ int Schedule_Perst_SelectByPlay(schedule_list_t* list, int play_id)
     while (!feof(fp)) {
         // 每次读取前清零
         memset(&data, 0, sizeof(schedule_t));
-
         if (fread(&data, sizeof(schedule_t), 1, fp) != 1) {
             break;  // 读取失败或到达文件尾
         }
-
-        printf("调试：读取到记录 ID=%d, play_id=%d, studio_id=%d\n",
-            data.id, data.play_id, data.studio_id);
-
         // 检查是否匹配剧目ID
         if (data.play_id == play_id) {
             printf("调试：找到匹配记录，创建新节点\n");
@@ -80,22 +66,17 @@ int Schedule_Perst_SelectByPlay(schedule_list_t* list, int play_id)
                 printf("错误：无法分配节点内存\n");
                 break;
             }
-
             // 复制数据
             newNode->data = data;
-
             // 将新节点添加到链表尾部
             // 获取尾节点
             schedule_list_node_t* tail = (schedule_list_node_t*)((*list)->node.prev);
-
             // 设置新节点的指针
             newNode->node.next = (list_node_t*)*list;
             newNode->node.prev = (list_node_t*)tail;
-
             // 更新尾节点和头节点的指针
             tail->node.next = (list_node_t*)newNode;
             (*list)->node.prev = (list_node_t*)newNode;
-
             recCount++;
             printf("调试：已添加 %d 条记录\n", recCount);
         }
@@ -122,7 +103,7 @@ int Schedule_Perst_Insert(schedule_t* data)
 
     printf("调试：开始插入演出计划...\n");
 
-    // 1. 读取现有记录，找出最大的ID
+    // 读取现有记录，找出最大的ID
     fp = fopen(SCHEDULE_DATA_FILE, "rb");
     if (fp != NULL) {
         while (fread(&last_record, sizeof(schedule_t), 1, fp) == 1) {
@@ -132,12 +113,9 @@ int Schedule_Perst_Insert(schedule_t* data)
         }
         fclose(fp);
     }
-
-    // 2. 为新记录分配ID（最大值+1）
+    // 为新记录分配ID
     data->id = max_id + 1;
-    printf("调试：为新演出计划分配ID=%d\n", data->id);
-
-    // 3. 打开文件，追加写入新记录
+    // 打开文件，追加写入新记录
     fp = fopen(SCHEDULE_DATA_FILE, "ab");
     if (fp == NULL) {
         // 如果文件不存在，尝试创建
@@ -147,13 +125,11 @@ int Schedule_Perst_Insert(schedule_t* data)
             fp = fopen(SCHEDULE_DATA_FILE, "ab");
         }
     }
-
     if (fp == NULL) {
         printf("错误：无法打开文件 %s\n", SCHEDULE_DATA_FILE);
         return 0;
     }
-
-    // 4. 写入记录
+    // 写入记录
     if (fwrite(data, sizeof(schedule_t), 1, fp) == 1) {
         printf("调试：成功写入演出计划，ID=%d\n", data->id);
         fclose(fp);
@@ -172,17 +148,14 @@ int Schedule_Perst_Update(const schedule_t* data)
     int found = 0;      // 查找标志
     FILE* fp = NULL;    // 文件指针
     schedule_t buf;     // 临时缓冲区
-
     // 参数验证
     if (data == NULL) {
         return 0;
     }
-
     // 检查文件是否存在
     if (!fileExists(SCHEDULE_DATA_FILE)) {
         return 0;  // 文件不存在，无法更新
     }
-
     fp = fopen(SCHEDULE_DATA_FILE, "rb+");
     if (fp == NULL) {
         return 0;
