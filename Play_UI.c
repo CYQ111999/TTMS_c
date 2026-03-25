@@ -49,7 +49,7 @@ void Play_UI_MgtEntry(void) {
     Paging_Locate_FirstPage(gl_playList, paging);
     char choice;
     do {
-        clearScreen();
+        //clearScreen();
         printf("================================================================\n");
         printf("                        剧目管理\n");
         printf("================================================================\n");

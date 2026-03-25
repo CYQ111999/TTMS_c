@@ -228,7 +228,7 @@
       <Filter>Source Files\Service</Filter>
     </ClCompile>
     <ClCompile Include="Play_Persist.c">
-      <Filter>Header Files\View</Filter>
+      <Filter>Source Files\Persistence</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

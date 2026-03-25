@@ -75,27 +75,24 @@ void Schedule_UI_MgtEntry(void)
     // 1. 获取用户输入的剧目ID
     do {
         system("cls");
-        printf("========================================\n");
+        printf("-----------------------------------------\n");
         printf("        演出计划管理 - 输入剧目ID        \n");
-        printf("========================================\n");
+        printf("-----------------------------------------\n");
         printf("请输入要管理的剧目ID（输入0返回上级菜单）：");
         input_valid = scanf("%d", &play_id);
         // 清除输入缓冲区
         { int c; while ((c = getchar()) != '\n' && c != EOF); }
-
         if (!input_valid) {
             printf("输入无效！请输入一个有效的数字。\n");
             printf("按任意键继续...");
             getchar();
             continue;
         }
-
         // 检查用户是否想返回
         if (play_id == 0) {
             printf("返回上级菜单...\n");
             return;
         }
-
         // 验证剧目ID是否有效
         if (play_id <= 0) {
             printf("剧目ID必须是一个正整数！\n");
@@ -103,8 +100,7 @@ void Schedule_UI_MgtEntry(void)
             getchar();
             continue;
         }
-
-        // 2. 调用Play_Srv_FetchByID()函数获取剧目信息
+        //  调用Play_Srv_FetchByID()函数获取剧目信息
         if (!Play_Srv_FetchByID(play_id, &play_info)) {
             // 获取不到记录，提示错误
             printf("获取剧目信息失败！剧目ID: %d 不存在。\n", play_id);
@@ -114,12 +110,11 @@ void Schedule_UI_MgtEntry(void)
         }
         break;
     } while (1);
-
     // 3. 显示剧目信息
     system("cls");
-    printf("========================================\n");
+    printf("-----------------------------------------\n");
     printf("        安排演出 - 剧目信息\n");
-    printf("========================================\n");
+    printf("-----------------------------------------\n");
     printf("剧目ID: %d\n", play_info.id);
     printf("剧目名称: %s\n", play_info.name);
     printf("剧目类型: %d\n", play_info.type);
@@ -128,30 +123,24 @@ void Schedule_UI_MgtEntry(void)
         printf("地区: %s\n", play_info.area);
     }
     printf("时长: %d分钟\n", play_info.duration);
-    printf("========================================\n\n");
-
+    printf("-----------------------------------------\n\n");
     // 4. 初始化分页参数paging
     paging.totalRecords = 0;
     paging.pageSize = DEFAULT_PAGE_SIZE;
     paging.offset = 0;
     paging.curPos = NULL;
-
     // 5. 调用Schedule_Srv_FetchByPlay()函数获取与编号为play_id的剧目相关的演出计划
     int totalCount = Schedule_Srv_FetchByPlay(play_id, &schedule_list);
     paging.totalRecords = totalCount;
-
-    // 6. 设置显示第一页
     if (schedule_list != NULL) {
         Paging_Locate_FirstPage(schedule_list, paging);
     }
-
     // 主循环
     while (1) {
         system("cls");
-        // 7. 显示当前页的剧目信息及菜单项
-        printf("========================================\n");
+        printf("-----------------------------------------\n");
         printf("        安排演出 - 剧目: %s\n", play_info.name);
-        printf("========================================\n");
+        printf("-----------------------------------------\n");
         printf("剧目ID: %d\n", play_info.id);
         printf("剧目名称: %s\n", play_info.name);
         printf("剧目类型: %d\n", play_info.type);
@@ -159,39 +148,26 @@ void Schedule_UI_MgtEntry(void)
             printf("地区: %s\n", play_info.area);
         }
         printf("时长: %d分钟\n", play_info.duration);
-        printf("========================================\n\n");
-
+        printf("-----------------------------------------\n\n");
         // 显示演出计划列表
         if (totalCount > 0 && schedule_list != NULL) {
             printf("演出计划列表 (共 %d 个):\n", totalCount);
             printf("---------------------------------------------------------------------------------------\n");
             printf("│ ID  │ 演出厅ID   │ 放映日期   │ 放映时间   │ 座位数  │\n");
             printf("---------------------------------------------------------------------------------------\n");
-
-            // 使用分页宏遍历当前页
             schedule_list_node_t* pos = NULL;
             int i = 0;
             Paging_ViewPage_ForEach(schedule_list, paging, schedule_list_node_t, pos, i) {
-                if (pos != schedule_list) {  // 跳过链表头
-                    // 格式化日期和时间
+                if (pos != schedule_list) {
                     char date_str[20];
                     char time_str[20];
                     snprintf(date_str, sizeof(date_str), "%04d-%02d-%02d",
                         pos->data.date.year, pos->data.date.month, pos->data.date.day);
-                    snprintf(time_str, sizeof(time_str), "%02d:%02d",
-                        pos->data.time.hour, pos->data.time.minute);
-
-                    printf("│ %-3d │ %-10d │ %-10s │ %-10s │ %-7d │\n",
-                        pos->data.id,
-                        pos->data.studio_id,
-                        date_str,
-                        time_str,
-                        pos->data.seat_count);
+                    snprintf(time_str, sizeof(time_str), "%02d:%02d", pos->data.time.hour, pos->data.time.minute);
+                    printf("│ %-3d │ %-10d │ %-10s │ %-10s │ %-7d │\n", pos->data.id, pos->data.studio_id, date_str, time_str, pos->data.seat_count);
                 }
             }
             printf("--------------------------------------------------------------------------------------\n");
-
-            // 显示分页信息
             printf("\n--- 第 %d/%d 页，共 %d 条记录 ---\n",
                 Pageing_CurPage(paging),
                 Pageing_TotalPages(paging),
@@ -200,16 +176,12 @@ void Schedule_UI_MgtEntry(void)
         else {
             printf("暂无演出计划数据。\n");
         }
-
-        // 显示菜单
         printf("\n请选择操作：\n");
         printf("  [T] 生成演出票  [A] 添加演出计划  [U] 修改演出计划  [D] 删除演出计划\n");
         printf("  [P] 上一页      [N] 下一页        [R] 返回上级菜单\n");
         printf("请输入选项: ");
         scanf(" %c", &choice);
         getchar();
-
-        // 处理用户选择
         switch (toupper(choice)) {
         case 'T':
             // 生成演出票
@@ -220,7 +192,6 @@ void Schedule_UI_MgtEntry(void)
                 break;
             }
             getchar();
-
             if (Schedule_Srv_FetchByID(schedule_id, &schedule_data)) {
                 Ticket_UI_MgtEntry(schedule_id);
                 // 重新获取数据
@@ -246,7 +217,6 @@ void Schedule_UI_MgtEntry(void)
                 printf("演出计划不存在！\n");
             }
             break;
-
         case 'A':
             operation_success = Schedule_UI_Add(play_id);
             if (operation_success) {
@@ -270,7 +240,6 @@ void Schedule_UI_MgtEntry(void)
                 }
             }
             break;
-
         case 'U':
             printf("请输入要修改的演出计划ID: ");
             if (scanf("%d", &schedule_id) != 1) {
@@ -279,7 +248,6 @@ void Schedule_UI_MgtEntry(void)
                 break;
             }
             getchar();
-
             if (Schedule_Srv_FetchByID(schedule_id, &schedule_data)) {
                 operation_success = Schedule_UI_Modify(schedule_id);
                 if (operation_success) {
@@ -307,7 +275,6 @@ void Schedule_UI_MgtEntry(void)
                 printf("演出计划不存在！\n");
             }
             break;
-
         case 'D':
             printf("请输入要删除的演出计划ID: ");
             if (scanf("%d", &schedule_id) != 1) {
@@ -316,7 +283,6 @@ void Schedule_UI_MgtEntry(void)
                 break;
             }
             getchar();
-
             if (Schedule_Srv_FetchByID(schedule_id, &schedule_data)) {
                 operation_success = Schedule_UI_Delete(schedule_id);
                 if (operation_success) {
@@ -344,7 +310,6 @@ void Schedule_UI_MgtEntry(void)
                 printf("演出计划不存在！\n");
             }
             break;
-
         case 'P':
             // 上一页
             if (schedule_list != NULL && !Pageing_IsFirstPage(paging)) {
@@ -354,7 +319,6 @@ void Schedule_UI_MgtEntry(void)
                 printf("已经是第一页了！\n");
             }
             break;
-
         case 'N':
             // 下一页
             if (schedule_list != NULL && !Pageing_IsLastPage(paging)) {
@@ -364,7 +328,6 @@ void Schedule_UI_MgtEntry(void)
                 printf("已经是最后一页了！\n");
             }
             break;
-
         case 'R':
             // 销毁链表
             if (schedule_list != NULL) {
@@ -381,30 +344,25 @@ void Schedule_UI_MgtEntry(void)
             }
             printf("返回上级菜单...\n");
             return;
-
         default:
             printf("无效的选项，请重新输入\n");
             break;
         }
-
         printf("按任意键继续...");
         getchar();
     }
 }
 
 int Schedule_UI_Add(int play_id) {
-    schedule_t new_schedule = { 0 };  // 初始化为0，确保所有字段都有默认值
+    schedule_t new_schedule = { 0 };
     char input[100];
     int year, month, day, hour, minute;
-
     system("cls");
-    printf("\n========================================\n");
+    printf("\n-----------------------------------------\n");
     printf("        添加新演出计划                 \n");
-    printf("========================================\n");
-
+    printf("-----------------------------------------\n");
     // 设置剧目ID
     new_schedule.play_id = play_id;
-
     // 获取演出厅ID
     printf("请输入演出厅ID: ");
     if (fgets(input, sizeof(input), stdin) == NULL) {
@@ -419,8 +377,6 @@ int Schedule_UI_Add(int play_id) {
         getchar();
         return 0;
     }
-
-    // 获取演出日期
     printf("请输入演出日期(格式: yyyy-mm-dd): ");
     if (fgets(input, sizeof(input), stdin) == NULL) {
         printf("输入错误！\n");
@@ -434,13 +390,9 @@ int Schedule_UI_Add(int play_id) {
         getchar();
         return 0;
     }
-
-    // 设置日期
     new_schedule.date.year = year;
     new_schedule.date.month = month;
     new_schedule.date.day = day;
-
-    // 获取演出时间
     printf("请输入演出时间(格式: hh:mm): ");
     if (fgets(input, sizeof(input), stdin) == NULL) {
         printf("输入错误！\n");
@@ -454,13 +406,9 @@ int Schedule_UI_Add(int play_id) {
         getchar();
         return 0;
     }
-
-    // 设置时间
     new_schedule.time.hour = hour;
     new_schedule.time.minute = minute;
-    new_schedule.time.second = 0;  // 设置秒为0
-
-    // 获取座位数
+    new_schedule.time.second = 0;
     printf("请输入座位数: ");
     if (fgets(input, sizeof(input), stdin) == NULL) {
         printf("输入错误！\n");
@@ -474,15 +422,12 @@ int Schedule_UI_Add(int play_id) {
         getchar();
         return 0;
     }
-
-    // 验证数据
     if (new_schedule.studio_id <= 0) {
         printf("错误：演出厅ID必须大于0！\n");
         printf("按任意键继续...");
         getchar();
         return 0;
     }
-
     if (new_schedule.date.year < 1900 || new_schedule.date.year > 2100 ||
         new_schedule.date.month < 1 || new_schedule.date.month > 12 ||
         new_schedule.date.day < 1 || new_schedule.date.day > 31) {
@@ -491,7 +436,6 @@ int Schedule_UI_Add(int play_id) {
         getchar();
         return 0;
     }
-
     if (new_schedule.time.hour < 0 || new_schedule.time.hour > 23 ||
         new_schedule.time.minute < 0 || new_schedule.time.minute > 59) {
         printf("错误：时间无效！\n");
@@ -506,7 +450,6 @@ int Schedule_UI_Add(int play_id) {
         getchar();
         return 0;
     }
-
     // 验证演出厅是否存在
     studio_t studio_info = { 0 };
     if (!Studio_Srv_FetchByID(new_schedule.studio_id, &studio_info)) {
@@ -515,20 +458,18 @@ int Schedule_UI_Add(int play_id) {
         getchar();
         return 0;
     }
-
     // 验证座位数是否超过演出厅容量
     if (new_schedule.seat_count > studio_info.seatsCount) {
         printf("警告：输入座位数 %d 超过演出厅容量 %d，将使用最大容量\n",
             new_schedule.seat_count, studio_info.seatsCount);
         new_schedule.seat_count = studio_info.seatsCount;
     }
-
     // 调用服务层函数添加演出计划
     printf("\n正在保存演出计划...\n");
     if (Schedule_Srv_Add(&new_schedule)) {
-        printf("\n========================================\n");
+        printf("\n-----------------------------------------\n");
         printf("        演出计划添加成功！             \n");
-        printf("========================================\n");
+        printf("-----------------------------------------\n");
         printf("演出计划ID: %d\n", new_schedule.id);
         printf("剧目ID: %d\n", new_schedule.play_id);
         printf("演出厅ID: %d\n", new_schedule.studio_id);
@@ -550,7 +491,6 @@ int Schedule_UI_Add(int play_id) {
         printf("2. 磁盘空间不足\n");
         printf("3. 系统权限问题\n");
     }
-
     printf("\n按任意键继续...");
     getchar();
     return 1;
@@ -559,144 +499,139 @@ int Schedule_UI_Add(int play_id) {
 //函数功能：根据演出计划的ID值，调用业务逻辑层函数修改演出计划数据
 int Schedule_UI_Modify(int id)
 {
-    int rtn = 0;                        //  成功修改演出计划的标志 rtn 置 0
-    schedule_t schedule;                // 存储演出计划数据
-    char new_date_str[11];              // 新日期字符串
-    char new_time_str[6];               // 新时间字符串
-    int new_seat_count;                 // 新座位数
-    char confirm;                       // 确认修改
-    //  调用 Schedule_Srv_FetchByID() 函数，根据待修改的演出计划 ID 查看是否存在
+    int rtn = 0;
+    schedule_t schedule = { 0 };
+    char input[100] = { 0 };
+    int new_seat_count = 0;
+    char confirm = 0;
     if (!Schedule_Srv_FetchByID(id, &schedule)) {
-        printf("演出计划(ID: %d)不存在！\n", id);
+        printf("\n错误：演出计划(ID: %d)不存在！\n", id);
+        printf("按回车键返回...");
+        getchar();
         return 0;
     }
-    // 显示当前演出计划信息
-    printf("\n--------------------------------------------------------------------------\n");
-    printf("                    修改演出计划                     \n");
-    printf("----------------------------------------------------------------------------\n");
-    printf("当前演出计划信息：\n");
-    printf("----------------------------------------------------------------------------\n");
+
+    // 2. 显示当前信息
+    printf("\n-------------------------------------------------\n");
+    printf("                 修改演出计划 (ID: %d)             \n", id);
+    printf("----------------------------------------------------\n");
+    printf("当前信息：\n");
+    printf("---------------------------------------------------\n");
     printf("演出计划ID: %d\n", schedule.id);
     printf("剧目ID: %d\n", schedule.play_id);
     printf("演出厅ID: %d\n", schedule.studio_id);
-    printf("放映日期: %s-%s-%s\n",
+    printf("放映日期: %04d-%02d-%02d\n",
         schedule.date.year, schedule.date.month, schedule.date.day);
-    printf("放映时间: %s:%s:%s\n",
+    printf("放映时间: %02d:%02d:%02d\n",
         schedule.time.hour, schedule.time.minute, schedule.time.second);
     printf("座位数: %d\n", schedule.seat_count);
-    printf("──────────────────────────────────────────────────\n");
-    // 获取剧目信息用于显示
-    play_t play_info;
+    printf("---------------------------------------------------\n");
+    // 显示剧目信息
+    play_t play_info = { 0 };
     if (Play_Srv_FetchByID(schedule.play_id, &play_info)) {
         printf("剧目名称: %s\n", play_info.name);
     }
-    // 获取演出厅信息用于显示
-    studio_t studio_info;
+    else {
+        printf("剧目名称: 未知\n");
+    }
+    studio_t studio_info = { 0 };
     if (Studio_Srv_FetchByID(schedule.studio_id, &studio_info)) {
-        printf("演出厅名称: %s (容量: %d)\n", studio_info.name, studio_info.seatsCount);
+        printf("演出厅名称: %s (容量: %d)\n",
+            studio_info.name, studio_info.seatsCount);
     }
-    // 检查该演出计划是否已经有票售出
-    int has_tickets = 0;  // 假设有检查票务的函数
-    // 这里可以调用票务服务层函数检查是否有票售出
-    /*has_tickets = Ticket_Srv_CheckSoldCount(id);*/
-    printf("\n请修改演出计划信息（直接按回车键保持原值）：\n");
-    // 获取新的日期
-    printf("新的放映日期(yyyy-mm-dd)[%s-%s-%s]: ",
-        schedule.date.year, schedule.date.month, schedule.date.day);
-    getchar();  
-    fgets(new_date_str, sizeof(new_date_str), stdin);
-    new_date_str[strcspn(new_date_str, "\n")] = '\0'; 
-    // 如果用户输入了新的日期
-    if (strlen(new_date_str) > 0) {
-        ttms_date_t new_date;
-        if (parse_date_from_string(new_date_str, &new_date)) {
-            schedule.date = new_date; 
-        }
-        else {
-            printf("日期格式无效！请使用 yyyy-mm-dd 格式。\n");
-            printf("按回车键返回...");
-            getchar();
-            return 0;
-        }
+    else {
+        printf("演出厅: 未知\n");
     }
-    // 获取新的时间
-    printf("新的放映时间(hh:mm)[%s:%s]: ",
-        schedule.time.hour, schedule.time.minute);
-    fgets(new_time_str, sizeof(new_time_str), stdin);
-    new_time_str[strcspn(new_time_str, "\n")] = '\0'; 
-    // 如果用户输入了新的时间
-    if (strlen(new_time_str) > 0) {
-        ttms_time_t new_time;
-        if (parse_time_from_string(new_time_str, &new_time)) {
-            schedule.time = new_time; 
-        }
-        else {
-            printf(" 时间格式无效！请使用 hh:mm 格式。\n");
-            printf("按回车键返回...");
-            getchar();
-            return 0;
-        }
-    }
-    // 获取新的座位数
-    printf("新的座位数[%d]: ", schedule.seat_count);
-    char seat_count_str[20];
-    fgets(seat_count_str, sizeof(seat_count_str), stdin);
-    // 如果用户输入了新的座位数
-    if (strlen(seat_count_str) > 1) { 
-        new_seat_count = atoi(seat_count_str);
-        // 验证座位数
-        if (new_seat_count <= 0) {
-            printf("座位数必须大于0！\n");
-            printf("按回车键返回...");
-            getchar();
-            return 0;
-        }
-        // 验证座位数是否超过演出厅容量
-        if (Studio_Srv_FetchByID(schedule.studio_id, &studio_info)) {
-            if (new_seat_count > studio_info.seatsCount) {
-                printf("座位数(%d)超过演出厅最大容量(%d)！\n",
-                    new_seat_count, studio_info.seatsCount);
-                printf("按回车键返回...");
-                getchar();
+
+    printf("------------------------------------------------\n");
+
+    // 3. 修改日期
+    printf("\n新的放映日期 (格式: 2024-01-20) 或按回车跳过: ");
+    fgets(input, sizeof(input), stdin);
+    input[strcspn(input, "\n")] = '\0';
+    if (strlen(input) > 0) {
+        int year = 0, month = 0, day = 0;
+        if (sscanf(input, "%d-%d-%d", &year, &month, &day) == 3) {
+            if (year >= 2000 && year <= 2100 &&
+                month >= 1 && month <= 12 &&
+                day >= 1 && day <= 31) {
+                schedule.date.year = year;
+                schedule.date.month = month;
+                schedule.date.day = day;
+                printf("日期已更新为: %04d-%02d-%02d\n", year, month, day);
+            }
+            else {
+                printf(" 错误：日期无效！\n");
                 return 0;
             }
         }
-        // 如果已经有票售出，座位数只能增加，不能减少
-        if (has_tickets && new_seat_count < schedule.seat_count) {
-            printf("该演出计划已有票售出，座位数不能减少！\n");
-            printf("按回车键返回...");
-            getchar();
+        else {
+            printf(" 错误：日期格式不正确！\n");
             return 0;
         }
-        schedule.seat_count = new_seat_count;
     }
-    // 显示修改后的信息
-    printf("\n修改后的演出计划信息：\n");
-    printf("----------------------------------------------------------------------------\n");
-    printf("演出计划ID: %d\n", schedule.id);
-    printf("剧目ID: %d\n", schedule.play_id);
-    printf("演出厅ID: %d\n", schedule.studio_id);
-    printf("放映日期: %s-%s-%s\n",
-        schedule.date.year, schedule.date.month, schedule.date.day);
-    printf("放映时间: %s:%s:%s\n",
-        schedule.time.hour, schedule.time.minute, schedule.time.second);
-    printf("座位数: %d\n", schedule.seat_count);
-    printf("---------------------------------------------------------------------------\n");
-    // 确认修改
-    printf("\n确定要修改此演出计划信息吗？(Y/N): ");
+    // 4. 修改时间
+    printf("\n新的放映时间 (格式: 20:00:00) 或按回车跳过: ");
+    fgets(input, sizeof(input), stdin);
+    input[strcspn(input, "\n")] = '\0';
+    if (strlen(input) > 0) {
+        int hour = 0, minute = 0, second = 0;
+        if (sscanf(input, "%d:%d:%d", &hour, &minute, &second) == 3) {
+            if (hour >= 0 && hour < 24 &&
+                minute >= 0 && minute < 60 &&
+                second >= 0 && second < 60) {
+                schedule.time.hour = hour;
+                schedule.time.minute = minute;
+                schedule.time.second = second;
+                printf("时间已更新为: %02d:%02d:%02d\n", hour, minute, second);
+            }
+            else {
+                printf("错误：时间无效！\n");
+                return 0;
+            }
+        }
+        else {
+            printf("错误：时间格式不正确！\n");
+            return 0;
+        }
+    }
+    // 5. 修改座位数
+    printf("\n新的座位数 (当前: %d) 或按回车跳过: ", schedule.seat_count);
+    fgets(input, sizeof(input), stdin);
+    input[strcspn(input, "\n")] = '\0';
+    if (strlen(input) > 0) {
+        new_seat_count = atoi(input);
+        if (new_seat_count <= 0) {
+            printf("错误：座位数必须大于0！\n");
+            return 0;
+        }
+        // 检查演出厅容量
+        studio_t studio_check = { 0 };
+        if (Studio_Srv_FetchByID(schedule.studio_id, &studio_check)) {
+            if (new_seat_count > studio_check.seatsCount) {
+                printf("错误：座位数超过演出厅容量(%d)！\n", studio_check.seatsCount);
+                return 0;
+            }
+        }
+        schedule.seat_count = new_seat_count;
+        printf("座位数已更新为: %d\n", new_seat_count);
+    }
+    // 6. 确认修改
+    printf("\n 确认要修改此演出计划吗？(Y/N): ");
     confirm = getchar();
-    getchar();  
+    getchar();
     if (confirm != 'Y' && confirm != 'y') {
         printf("修改操作已取消。\n");
         return 0;
     }
-    //  调用 Schedule_Srv_Modify() 函数，修改演出计划
+
+    // 7. 执行修改
     if (Schedule_Srv_Modify(&schedule)) {
-        printf("演出计划修改成功！\n");
+        printf("\n 演出计划修改成功！\n");
         rtn = 1;
     }
     else {
-        printf("演出计划修改失败！\n");
+        printf("\n 演出计划修改失败！\n");
     }
     return rtn;
 }
@@ -704,67 +639,82 @@ int Schedule_UI_Modify(int id)
 //函数功能：根据参数中的演出计划ID号，通过调用业务逻辑层函数删除演出计划
 int Schedule_UI_Delete(int id)
 {
-    int rtn = 0;                //  成功删除演出计划的标志 rtn 置 0
-    schedule_t schedule;        // 存储演出计划信息
-    char confirm;               // 确认删除标志
+    int rtn = 0;
+    schedule_t schedule = { 0 };
+    char confirm;
     // 先检查演出计划是否存在
     if (!Schedule_Srv_FetchByID(id, &schedule)) {
-        printf(" 演出计划(ID: %d)不存在！\n", id);
+        printf("\n演出计划(ID: %d)不存在！\n", id);
+        printf("按回车键返回...");
+        getchar();
         return 0;
     }
     // 显示演出计划信息
-    printf("\n-----------------------------------------------------------------\n");
-    printf("                    删除演出计划                     \n");
-    printf("-------------------------------------------------------------------\n");
+    printf("\n===================================================\n");
+    printf("                    删除演出计划                    \n");
+    printf("===================================================\n");
     printf("演出计划信息：\n");
-    printf("-------------------------------------------------------------------\n");
+    printf("---------------------------------------------------\n");
     printf("演出计划ID: %d\n", schedule.id);
     printf("剧目ID: %d\n", schedule.play_id);
     printf("演出厅ID: %d\n", schedule.studio_id);
-    printf("放映日期: %s-%s-%s\n",
+    printf("放映日期: %04d-%02d-%02d\n",
         schedule.date.year, schedule.date.month, schedule.date.day);
-    printf("放映时间: %s:%s:%s\n",
+    printf("放映时间: %02d:%02d:%02d\n",
         schedule.time.hour, schedule.time.minute, schedule.time.second);
     printf("座位数: %d\n", schedule.seat_count);
-    printf("------------------------------------------------------------------\n");
+    printf("---------------------------------------------------\n");
     // 获取剧目信息用于显示
-    play_t play_info;
+    play_t play_info = { 0 };
     if (Play_Srv_FetchByID(schedule.play_id, &play_info)) {
         printf("剧目名称: %s\n", play_info.name);
     }
+    else {
+        printf("剧目名称: 未知\n");
+    }
     // 获取演出厅信息用于显示
-    studio_t studio_info;
+    studio_t studio_info = { 0 };
     if (Studio_Srv_FetchByID(schedule.studio_id, &studio_info)) {
-        printf("演出厅名称: %s\n", studio_info.name);
+        printf("演出厅名称: %s (容量: %d)\n", studio_info.name, studio_info.seatsCount);
     }
+    else {
+        printf("演出厅: 未知\n");
+    }
+    printf("===================================================\n");
+
     // 检查该演出计划是否已经有票售出
-    int has_tickets = 0;  // 假设有检查票务的函数
-    // 这里可以调用票务服务层函数检查是否有票售出
-     //has_tickets = Ticket_Srv_CheckSoldCount(id);
+    int has_tickets = 0;
     if (has_tickets) {
-        printf(" 警告：该演出计划已有票售出，删除将同时删除所有相关票务！\n");
+        printf("\n 警告：该演出计划已有票售出，删除将同时删除所有相关票务！\n");
     }
-    printf("\n确定要删除此演出计划吗？(Y/N): ");
+    // 确认删除
+    printf("\n 确定要删除此演出计划吗？(Y/N): ");
     scanf(" %c", &confirm);
+    getchar();
     if (confirm != 'Y' && confirm != 'y') {
-        printf("删除操作已取消。\n");
+        printf(" 删除操作已取消。\n");
+        printf("按回车键返回...");
+        getchar();
         return 0;
     }
     // 调用Schedule_Srv_DeleteByID()函数，根据待删除的演出计划ID删除演出计划
     if (Schedule_Srv_DeleteByID(id)) {
-        printf("演出计划删除成功！\n");
+        printf("\n 演出计划删除成功！\n");
         rtn = 1;
-        // 同时调用Ticket_Srv_DeleteAllByScheduleID()函数删除该演出计划的所有票
-        if (Ticket_Srv_DeleteAllByScheduleID(id)) {
-            printf("该演出计划的所有票务也已成功删除。\n");
-        }
-        else {
-            printf(" 演出计划已删除，但票务删除失败或没有票务数据。\n");
+        if (has_tickets) {
+            if (Ticket_Srv_DeleteAllByScheduleID(id)) {
+                printf(" 该演出计划的所有票务也已成功删除。\n");
+            }
+            else {
+                printf(" 演出计划已删除，但票务删除失败或没有票务数据。\n");
+            }
         }
     }
     else {
-        printf("演出计划删除失败！\n");
+        printf("\n 演出计划删除失败！\n");
     }
+    printf("\n按回车键返回...");
+    getchar();
     return rtn;
 }
 
@@ -791,7 +741,6 @@ void Schedule_UI_ListAll(void)
         return;
     }
     paging.totalRecords = total_count;
-    // 设置显示第一页
     Paging_Locate_FirstPage(list, paging);
     int exit_flag = 0;
     do {
@@ -805,7 +754,7 @@ void Schedule_UI_ListAll(void)
         //  显示当前页数据
         index = 0;
         Paging_ViewPage_ForEach(list, paging, schedule_list_node_t, pos, index) {
-            if (pos != list) { 
+            if (pos != list) {
                 // 获取剧目信息
                 play_t play_info;
                 int has_play = Play_Srv_FetchByID(pos->data.play_id, &play_info);
@@ -822,12 +771,10 @@ void Schedule_UI_ListAll(void)
                     pos->data.seat_count);
             }
         }
-        // 显示分页信息
         printf("\n--- 第 %d/%d 页，共 %d 条记录 ---\n",
             Pageing_CurPage(paging),
             Pageing_TotalPages(paging),
             total_count);
-        // 显示功能菜单
         printf("\n请选择操作：\n");
         printf("  [Q] 按剧目名称查询  [P] 上一页  [N] 下一页  [R] 返回\n");
         printf("请输入选项: ");
@@ -837,7 +784,6 @@ void Schedule_UI_ListAll(void)
         // 处理用户输入
         switch (toupper(choice)) {
         case 'Q':
-            // 调用查询函数
         {
             char play_name[100];
             printf("\n请输入剧目名称: ");
@@ -852,7 +798,6 @@ void Schedule_UI_ListAll(void)
         }
         break;
         case 'P':
-            // 上一页
             if (!Pageing_IsFirstPage(paging)) {
                 Paging_Locate_OffsetPage(list, paging, -1, schedule_list_node_t);
             }
@@ -863,7 +808,6 @@ void Schedule_UI_ListAll(void)
             }
             break;
         case 'N':
-            // 下一页
             if (!Pageing_IsLastPage(paging)) {
                 Paging_Locate_OffsetPage(list, paging, 1, schedule_list_node_t);
             }
@@ -883,7 +827,6 @@ void Schedule_UI_ListAll(void)
             break;
         }
     } while (!exit_flag);
-    //  销毁链表
     List_Destroy(list, schedule_list_node_t);
 }
 
@@ -912,8 +855,6 @@ int Schedule_UI_Query(const char* play_name)
         printf("剧目名称不能为空！\n");
         return 0;
     }
-    // 调用Play_Srv_FetchByName获取剧目信息
-    // 先使用Play_Srv_FetchAll，然后手动筛选
     play_list_t all_plays = NULL;
     int all_play_count = Play_Srv_FetchAll(&all_plays);
     if (all_play_count <= 0) {
@@ -969,7 +910,6 @@ int Schedule_UI_Query(const char* play_name)
                     schedule_current = (schedule_list_node_t*)(schedule_current->node.next);
                 }
                 printf("共 %d 个演出计划\n\n", schedule_count);
-                // 释放临时链表
                 List_Destroy(temp_schedule_list, schedule_list_node_t);
             }
             else {
@@ -978,7 +918,6 @@ int Schedule_UI_Query(const char* play_name)
         }
         play_current = (play_list_node_t*)(play_current->node.next);
     }
-    // 释放所有剧目链表
     List_Destroy(all_plays, play_list_node_t);
     if (play_found_count == 0) {
         printf("未找到剧目名称包含 '%s' 的剧目。\n", search_name);

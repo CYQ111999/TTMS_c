@@ -16,7 +16,6 @@ int Play_Perst_SelectByName(play_list_t list, char condt[])
     FILE* fp = NULL;         // 文件指针
     play_t data;             // 临时存储读取的数据
     play_list_node_t* newNode = NULL;  // 新节点指针
-
     // 参数验证
     if (list == NULL) {
         return 0;
@@ -24,7 +23,6 @@ int Play_Perst_SelectByName(play_list_t list, char condt[])
     if (condt == NULL || condt[0] == '\0') {
         return 0;
     }
-
     recCount = 0;
 
     // 清空链表
