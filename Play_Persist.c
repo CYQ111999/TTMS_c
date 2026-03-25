@@ -4,18 +4,21 @@
 #include "Play.h"
 #include "EntityKey_Persist.h"
 #include "List.h"
+#include "Play_Persist.h"
+
+
 #define _CRT_SECURE_NO_WARNINGS
 
 #define PLAY_DATA_FILE "Play.dat"
 #define PLAY_DATA_TEMP_FILE "PlayTmp.dat"
 
 // 从剧目信息文件Play.dat中载入剧目名称包含指定字符串的剧目信息
-int Play_Perst_SelectByName(play_list_t list, char condt[])
-{
+int Play_Perst_SelectByName(play_list_t* list, char condt[]) {
     int recCount = 0;        // 记录计数器
     FILE* fp = NULL;         // 文件指针
     play_t data;             // 临时存储读取的数据
     play_list_node_t* newNode = NULL;  // 新节点指针
+
     // 参数验证
     if (list == NULL) {
         return 0;
@@ -23,10 +26,20 @@ int Play_Perst_SelectByName(play_list_t list, char condt[])
     if (condt == NULL || condt[0] == '\0') {
         return 0;
     }
+
     recCount = 0;
 
-    // 清空链表
-    List_Free(list, play_list_node_t);
+    // 处理链表
+    if (*list != NULL) {
+        List_Free(*list, play_list_node_t);
+    }
+    else {
+        List_Init(*list, play_list_node_t);
+    }
+
+    if (*list == NULL) {
+        return 0;
+    }
 
     // 判断剧目数据文件Play.dat是否存在
     fp = fopen(PLAY_DATA_FILE, "rb");
@@ -55,7 +68,7 @@ int Play_Perst_SelectByName(play_list_t list, char condt[])
             newNode->data = data;
 
             // 正确添加到链表尾部
-            List_AddTail(list, newNode);
+            List_AddTail(*list, newNode);
             recCount++;
         }
     }
@@ -64,19 +77,33 @@ int Play_Perst_SelectByName(play_list_t list, char condt[])
     return recCount;
 }
 
-int Play_Perst_SelectAll(play_list_t list) {
+int Play_Perst_SelectAll(play_list_t* list) {
     int recCount = 0;
     play_t data;
+    FILE* fp = NULL;
+
     // 参数验证
     if (list == NULL) {
         return 0;
     }
-    FILE* fp = fopen(PLAY_DATA_FILE, "rb");
+
+    // 处理链表
+    if (*list != NULL) {
+        List_Free(*list, play_list_node_t);
+    }
+    else {
+        List_Init(*list, play_list_node_t);
+    }
+
+    if (*list == NULL) {
+        return 0;
+    }
+
+    fp = fopen(PLAY_DATA_FILE, "rb");
     if (!fp) {
         return 0;
     }
-    // 清空链表
-    List_Free(list, play_list_node_t);
+
     // 读取文件并构建链表
     while (fread(&data, sizeof(play_t), 1, fp) == 1) {
         play_list_node_t* newNode = (play_list_node_t*)malloc(sizeof(play_list_node_t));
@@ -84,21 +111,31 @@ int Play_Perst_SelectAll(play_list_t list) {
             break;
         }
         newNode->data = data;
-        List_AddTail(list, newNode);
+        List_AddTail(*list, newNode);
         recCount++;
     }
+
     fclose(fp);
+
+    // 如果没有数据，清理链表
+    if (recCount == 0 && *list != NULL) {
+        List_Destroy(*list, play_list_node_t);
+        *list = NULL;
+    }
+
     return recCount;
 }
 
 int Play_Perst_Insert(play_t* data) {
     long key = EntKey_Perst_GetNewKeys("play", 1);
     if (key <= 0) return 0;
+
     data->id = (int)key;
     FILE* fp = fopen(PLAY_DATA_FILE, "ab");
     if (!fp) {
         return 0;
     }
+
     int ret = fwrite(data, sizeof(play_t), 1, fp);
     fclose(fp);
     return ret;
@@ -111,6 +148,7 @@ int Play_Perst_Update(const play_t* data) {
     if (!fp) {
         return 0;
     }
+
     while (fread(&buf, sizeof(play_t), 1, fp) == 1) {
         if (buf.id == data->id) {
             fseek(fp, -(long)sizeof(play_t), SEEK_CUR);
@@ -119,6 +157,7 @@ int Play_Perst_Update(const play_t* data) {
             break;
         }
     }
+
     fclose(fp);
     return found;
 }
@@ -126,9 +165,11 @@ int Play_Perst_Update(const play_t* data) {
 int Play_Perst_RemByID(int id) {
     int found = 0;
     play_t buf;
+
     if (rename(PLAY_DATA_FILE, PLAY_DATA_TEMP_FILE) != 0) {
         return 0;
     }
+
     FILE* fpSrc = fopen(PLAY_DATA_TEMP_FILE, "rb");
     FILE* fpDst = fopen(PLAY_DATA_FILE, "wb");
     if (!fpSrc || !fpDst) {
@@ -136,6 +177,7 @@ int Play_Perst_RemByID(int id) {
         if (fpDst) fclose(fpDst);
         return 0;
     }
+
     while (fread(&buf, sizeof(play_t), 1, fpSrc) == 1) {
         if (buf.id != id) {
             fwrite(&buf, sizeof(play_t), 1, fpDst);
@@ -144,6 +186,7 @@ int Play_Perst_RemByID(int id) {
             found = 1;
         }
     }
+
     fclose(fpSrc);
     fclose(fpDst);
     remove(PLAY_DATA_TEMP_FILE);
@@ -157,6 +200,7 @@ int Play_Perst_SelectByID(int id, play_t* buf) {
     if (!fp) {
         return 0;
     }
+
     while (fread(&data, sizeof(play_t), 1, fp) == 1) {
         if (data.id == id) {
             *buf = data;
@@ -164,6 +208,7 @@ int Play_Perst_SelectByID(int id, play_t* buf) {
             break;
         }
     }
+
     fclose(fp);
     return found;
 }
