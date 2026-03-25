@@ -105,7 +105,6 @@ static void show_sales_by_play(void)
         // 表头
         printf(" 剧目ID  剧目名称                地区  时长(分)  上座数      票房(元)  上映日期\n");
         printf("------------------------------------------------------------------------\n");
-
         // 使用分页宏遍历当前页
         sales_analysis_list_node_t* pos;
         int i = 0;
@@ -121,7 +120,6 @@ static void show_sales_by_play(void)
                 pos->data.start_date.month,
                 pos->data.start_date.day);
         }
-
         // 页脚信息
         printf("------------------------------------------------------------------------\n");
         printf(" 第 [%d/%d] 页", Pageing_CurPage(paging), Pageing_TotalPages(paging));
@@ -163,7 +161,6 @@ static void show_sales_by_play(void)
             break;
         }
     } while (choice != 'R' && choice != 'r');
-
     // 释放链表内存
     if (list != NULL) {
         List_Destroy(list, sales_analysis_list_node_t);
@@ -174,10 +171,8 @@ static void show_sales_by_play(void)
 static void show_sales_by_schedule(void)
 {
     int play_id = 0;
-
     system("cls");
     printf("\n========== 按演出计划统计销售额 ==========\n");
-
     // 输入剧目ID
     printf("请输入剧目ID (输入0查看所有剧目): ");
     if (scanf("%d", &play_id) != 1) {
@@ -186,7 +181,6 @@ static void show_sales_by_schedule(void)
         return;
     }
     getchar();
-
     if (play_id > 0) {
         // 获取剧目名称
         play_t play;
@@ -198,11 +192,9 @@ static void show_sales_by_schedule(void)
         }
         printf("剧目: %s\n", play.name);
     }
-
     // 获取演出计划列表
     schedule_list_t schedule_list = NULL;
     int total_schedules = 0;
-
     if (play_id > 0) {
         // 获取指定剧目的演出计划
         total_schedules = Schedule_Srv_FetchByPlay(play_id, &schedule_list);
@@ -211,25 +203,20 @@ static void show_sales_by_schedule(void)
         // 获取所有演出计划
         total_schedules = Schedule_Srv_FetchAll(&schedule_list);
     }
-
     if (total_schedules <= 0) {
         printf("暂无演出计划数据。\n");
         printf("按任意键返回...");
         getchar();
         return;
     }
-
     printf("\n%-8s %-30s %-12s %-8s %-8s %-10s\n",
         "计划ID", "剧目名称", "日期", "时间", "演出厅", "售票数");
     printf("----------------------------------------------------------------\n");
-
     int total_sales = 0;
     int total_tickets = 0;
-
-    schedule_list_node_t* schedule_node = schedule_list;
+    schedule_list_node_t* schedule_node = (schedule_list_node_t*)LIST_NODE(schedule_list)->next;
     int count = 0;
-
-    while (schedule_node && &schedule_node->node != &(schedule_list)->node) {
+    while (schedule_node != schedule_list) {
         int schedule_id = schedule_node->data.id;
 
         // 获取剧目名称
@@ -338,10 +325,10 @@ static void show_sales_by_time_period(void)
         "剧目ID", "剧目名称", "上座数", "销售额");
     printf("-------------------------------------------------\n");
 
-    sales_analysis_list_node_t* node = result_list;
+    sales_analysis_list_node_t* node = (sales_analysis_list_node_t*)LIST_NODE(result_list)->next;
     int count = 0;
 
-    while (node && &node->node != &(result_list)->node) {
+    while (node != result_list) {
         printf("%-8d %-30s %-10ld %-10ld\n",
             node->data.play_id,
             node->data.name,

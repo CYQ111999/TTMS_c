@@ -116,7 +116,7 @@ int Studio_UI_Add(void)
     printf("========================================\n");
     printf("              添加新演出厅\n");
     printf("========================================\n");
-    // 1. 输入演出厅名称
+    // 输入演出厅名称
     printf("请输入演出厅名称: ");
     if (fgets(input_buffer, sizeof(input_buffer), stdin) == NULL) {
         printf("输入错误。\n");
@@ -132,7 +132,7 @@ int Studio_UI_Add(void)
     }
     strncpy(new_studio.name, input_buffer, sizeof(new_studio.name) - 1);
     new_studio.name[sizeof(new_studio.name) - 1] = '\0';
-    // 2. 输入行数
+    // 输入行数
     printf("请输入行数: ");
     if (fgets(input_buffer, sizeof(input_buffer), stdin) == NULL ||
         sscanf(input_buffer, "%d", &rows) != 1 || rows <= 0) {
@@ -142,7 +142,7 @@ int Studio_UI_Add(void)
         return 0;
     }
     new_studio.rowsCount = rows;
-    // 3. 输入列数
+    // 输入列数
     printf("请输入列数: ");
     if (fgets(input_buffer, sizeof(input_buffer), stdin) == NULL ||
         sscanf(input_buffer, "%d", &cols) != 1 || cols <= 0) {
@@ -152,10 +152,10 @@ int Studio_UI_Add(void)
         return 0;
     }
     new_studio.colsCount = cols;
-    // 4. 计算座位数
+    // 计算座位数
     new_studio.seatsCount = rows * cols;
     new_studio.id = 0; // 明确置0，表示等待分配
-    // 6. 显示确认信息 (此时ID尚未分配)
+    // 显示确认信息 
     printf("\n-----------------------------------------------------------------------------\n");
     printf("即将添加的演出厅信息：\n");
     printf("  名称: %s\n", new_studio.name);
@@ -185,7 +185,6 @@ int Studio_UI_Add(void)
         printf("\n 演出厅添加失败！\n");
         // 可以提示用户检查数据文件权限或磁盘空间
     }
-
     printf("按任意键返回...");
     getchar(); // 等待用户按键
     return rtn;

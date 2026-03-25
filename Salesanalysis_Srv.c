@@ -62,7 +62,7 @@ int Salesanalysis_Srv_StatByPlay(sales_analysis_list_t* list) {
 
         // 针对剧目链表B中某个剧目，调用 Schedule_Perst_SelectByPlay
         // 获取该剧目的所有演出计划，存入链表C
-        Schedule_Perst_SelectByPlay(play_node->data.id, &sched_list);
+        Schedule_Perst_SelectByPlay(&sched_list, play_node->data.id);
 
         // 遍历该剧目的每个演出计划
         schedule_list_node_t* sched_node;
@@ -206,7 +206,7 @@ int Salesanalysis_Srv_StatByTimePeriod(ttms_date_t start_date,
         }
 
         // 获取该剧目的所有演出计划
-        Schedule_Perst_SelectByPlay(play_node->data.id, &sched_list);
+        Schedule_Perst_SelectByPlay(&sched_list, play_node->data.id);
 
         // 遍历该剧目的每个演出计划
         schedule_list_node_t* sched_node;
